@@ -13,7 +13,7 @@ Esta version ya esta preparada como app Next.js para Vercel:
 - Stripe Checkout desbloquea el chat al volver del pago.
 - Chat server-side conectado a OpenAI cuando se configure `OPENAI_API_KEY`.
 - Cerebro propio de OpoCompi con instrucciones, tono, reglas y contexto inicial.
-- Generador inicial de tests.
+- Pagina `/tests` para miembros, con respuestas ocultas hasta pulsar resolver.
 
 Si faltan claves de Stripe u OpenAI, la app muestra mensajes de configuracion. Supabase queda reservado para una fase posterior con cuentas completas.
 
@@ -23,7 +23,9 @@ Si faltan claves de Stripe u OpenAI, la app muestra mensajes de configuracion. S
 - `app/globals.css`: estilos.
 - `app/api/chat/route.ts`: endpoint del asistente IA.
 - `app/api/checkout/route.ts`: endpoint para Stripe Checkout sin login previo.
+- `app/tests/page.tsx`: practica de tests solo para miembros.
 - `app/api/stripe-webhook/route.ts`: webhook de Stripe.
+- `lib/test-bank.ts`: banco inicial de preguntas tipo test.
 - `app/api/me/route.ts`: comprueba usuario y membresia.
 - `lib/opocompi-brain.ts`: instrucciones y contexto base de la IA propia.
 - `docs/knowledge/`: carpeta para temario, preguntas y estilo de OpoCompi.
