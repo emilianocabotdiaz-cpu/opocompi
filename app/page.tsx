@@ -15,8 +15,41 @@ type Message = {
   text: string;
 };
 
+function renderMessageText(text: string) {
+  const blocks = text.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean);
+
+  return blocks.map((block, blockIndex) => {
+    const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
+    const isList = lines.length > 1 && lines.every((line) => /^[-*]\s+/.test(line) || /^\d+[.)]\s+/.test(line));
+
+    if (isList) {
+      return (
+        <ul className="message-list" key={`${block}-${blockIndex}`}>
+          {lines.map((line) => (
+            <li key={line}>{line.replace(/^[-*]\s+/, "").replace(/^\d+[.)]\s+/, "")}</li>
+          ))}
+        </ul>
+      );
+    }
+
+    return (
+      <p className="message-paragraph" key={`${block}-${blockIndex}`}>
+        {lines.map((line, lineIndex) => (
+          <span key={`${line}-${lineIndex}`}>
+            {line}
+            {lineIndex < lines.length - 1 ? <br /> : null}
+          </span>
+        ))}
+      </p>
+    );
+  });
+}
+
 const paidWelcomeMessage =
-  "Bienvenido compañero, estoy para ayudarte a ser Policía. Lo vas a conseguir y lo vamos a celebrar.";
+  "Bienvenido compañero, estoy para ayudarte a ser Policía. Lo vas a conseguir y lo vamos a celebrar. ¿Dime en qué te puedo ayudar, compi?";
+
+const trialWelcomeMessage =
+  "Puedes probarme gratis con 3 mensajes. Pregúntame una duda, pídeme un test o dime cómo llevas la semana.";
 
 const modeSupportMessages: Record<string, string> = {
   dudas: "Perfecto, compañero. Volvemos a dudas de temario: vamos a dejarlo claro, corto y útil para examen.",
@@ -38,7 +71,7 @@ export default function Home() {
     {
       id: "welcome",
       role: "assistant",
-      text: "Puedes probarme gratis con 3 mensajes. Preguntame una duda, pideme un test o dime como llevas la semana.",
+      text: trialWelcomeMessage,
     },
   ]);
 
@@ -71,7 +104,7 @@ export default function Home() {
     setDemoUses(Number.isFinite(storedUses) ? storedUses : 0);
 
     const storedMessages = localStorage.getItem("opocompi-chat-messages");
-    if (storedMessages && params.get("checkout") !== "success") {
+    if (storedMessages && params.get("checkout") !== "success" && !storedPaidAccess) {
       try {
         const parsedMessages = JSON.parse(storedMessages) as Message[];
         if (Array.isArray(parsedMessages) && parsedMessages.length > 0) {
@@ -207,7 +240,7 @@ export default function Home() {
 
         <section id="inicio" className="hero">
           <div className="hero-media" aria-hidden="true">
-            <img src="/brand/police-banner.png" alt="" />
+            <img src="/brand/police-banner.jpg" alt="" />
           </div>
           <div className="hero-content">
             <img className="hero-logo" src="/brand/opocompi-logo.png" alt="Logotipo de OpoCompi" />
@@ -238,12 +271,64 @@ export default function Home() {
           </article>
         </section>
 
+        {!paidAccess ? (
+          <section className="conversion-section">
+            <div className="section-heading compact">
+              <p className="eyebrow">Hecho para opositores</p>
+              <h2>Menos bloqueo, mas practica</h2>
+              <p>
+                OpoCompi no sustituye tu temario: te acompaña para entenderlo, repasarlo y convertir dudas en entrenamiento.
+              </p>
+            </div>
+            <div className="benefit-grid">
+              <article>
+                <strong>Respuesta inmediata</strong>
+                <p>Pregunta una duda y recibe una explicacion corta, ordenada y adaptada a oposicion.</p>
+              </article>
+              <article>
+                <strong>Tests para fijar</strong>
+                <p>Practica con opciones A/B/C/D, corrige fallos y repasa los puntos debiles.</p>
+              </article>
+              <article>
+                <strong>Ritmo de estudio</strong>
+                <p>Recibe apoyo, planes breves y empuje cuando cuesta sentarse a estudiar.</p>
+              </article>
+            </div>
+          </section>
+        ) : null}
+
+        {!paidAccess ? (
+          <section className="how-section">
+            <div className="how-copy">
+              <p className="eyebrow">Como funciona</p>
+              <h2>Pruebalo antes de pagar</h2>
+              <p>Empieza con 3 mensajes gratis. Si te ayuda, desbloqueas el chat completo y la zona de tests.</p>
+            </div>
+            <div className="steps-list">
+              <article>
+                <span>1</span>
+                <p>Haz una pregunta real de tu oposicion.</p>
+              </article>
+              <article>
+                <span>2</span>
+                <p>Comprueba si la explicacion te ayuda a avanzar.</p>
+              </article>
+              <article>
+                <span>3</span>
+                <p>Activa la membresia y sigue practicando cada dia.</p>
+              </article>
+            </div>
+          </section>
+        ) : null}
+
         <section id="asistente" className="workspace">
           <div className="section-heading">
-            <p className="eyebrow">Prueba gratuita</p>
-            <h2>Chat de acompanamiento</h2>
+            <p className="eyebrow">{paidAccess ? "Zona de miembros" : "Prueba gratuita"}</p>
+            <h2>{paidAccess ? "Tu chat privado de oposicion" : "Chat de acompanamiento"}</h2>
             <p>
-              Usa 3 mensajes gratis. Al contratar la membresia, el chat queda desbloqueado para seguir estudiando.
+              {paidAccess
+                ? "Dime que tema llevas entre manos y avanzamos juntos, compi."
+                : "Usa 3 mensajes gratis. Al contratar la membresia, el chat queda desbloqueado para seguir estudiando."}
             </p>
           </div>
 
@@ -278,7 +363,7 @@ export default function Home() {
                 {messages.map((message) => (
                   <article className={`message ${message.role}`} key={message.id}>
                     <span>{message.role === "user" ? "Tu" : "OpoCompi"}</span>
-                    <p>{message.text}</p>
+                    <div className="message-body">{renderMessageText(message.text)}</div>
                   </article>
                 ))}
               </div>
@@ -320,6 +405,16 @@ export default function Home() {
             </a>
           </div>
         </section>
+
+        {!paidAccess ? (
+          <section className="cta-band">
+            <div>
+              <p className="eyebrow">Empieza hoy</p>
+              <h2>Tu oposicion no se prepara sola. Pero no tienes por que prepararla solo.</h2>
+            </div>
+            <a className="btn btn-primary" href="#membresia">Desbloquear OpoCompi</a>
+          </section>
+        ) : null}
 
         {!paidAccess ? (
           <section id="membresia" className="pricing">

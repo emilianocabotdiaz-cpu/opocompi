@@ -252,7 +252,9 @@ select {
 
 .workspace,
 .test-section,
-.pricing {
+.pricing,
+.conversion-section,
+.how-section {
   padding: 58px clamp(18px, 5vw, 72px);
 }
 
@@ -275,6 +277,99 @@ select {
   color: var(--muted);
   font-size: 17px;
   line-height: 1.62;
+}
+
+.conversion-section {
+  background: var(--paper);
+}
+
+.benefit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.benefit-grid article,
+.steps-list article {
+  padding: 18px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.benefit-grid strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 18px;
+}
+
+.benefit-grid p,
+.steps-list p,
+.how-copy p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.how-section {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 24px;
+  align-items: start;
+  background: var(--white);
+}
+
+.how-copy h2 {
+  margin: 0 0 12px;
+  font-size: clamp(34px, 4vw, 54px);
+  line-height: 1;
+}
+
+.steps-list {
+  display: grid;
+  gap: 12px;
+}
+
+.steps-list article {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.steps-list span {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  color: var(--white);
+  background: var(--blue);
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.cta-band {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 42px clamp(18px, 5vw, 72px);
+  color: var(--white);
+  background: #10294f;
+}
+
+.cta-band h2 {
+  max-width: 820px;
+  margin: 0;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.05;
+}
+
+.cta-band .btn-primary {
+  flex: 0 0 auto;
+  background: var(--gold);
+  color: var(--ink);
+  box-shadow: none;
 }
 
 .app-shell {
@@ -460,8 +555,29 @@ select {
   text-transform: uppercase;
 }
 
-.message p {
+.message p,
+.message ul {
   margin: 0;
+}
+
+.message-body {
+  display: grid;
+  gap: 10px;
+}
+
+.message-paragraph {
+  line-height: 1.58;
+}
+
+.message-list {
+  display: grid;
+  gap: 6px;
+  padding-left: 20px;
+  line-height: 1.55;
+}
+
+.message-list li::marker {
+  color: var(--blue);
 }
 
 .message.assistant {
@@ -951,6 +1067,8 @@ select {
   .app-shell,
   .pricing-grid,
   .pricing-grid.two,
+  .benefit-grid,
+  .how-section,
   .test-builder,
   .setup-grid {
     grid-template-columns: 1fr;
@@ -967,7 +1085,8 @@ select {
 
   .test-entry,
   .tests-toolbar,
-  .resolve-bar {
+  .resolve-bar,
+  .cta-band {
     align-items: stretch;
     flex-direction: column;
   }
