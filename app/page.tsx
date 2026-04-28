@@ -186,6 +186,7 @@ export default function Home() {
           <a href="#asistente">Asistente</a>
           <a href="#test">Tests</a>
           <a href="#membresia">Membresia</a>
+          <a href="/setup">Setup</a>
         </nav>
         <a className="btn btn-primary" href="#membresia">Acceder</a>
       </header>

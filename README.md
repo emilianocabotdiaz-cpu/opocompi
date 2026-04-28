@@ -27,6 +27,7 @@ Si faltan claves de Supabase, Stripe u OpenAI, la app muestra modo demo o mensaj
 - `lib/supabase-browser.ts`: cliente publico de Supabase.
 - `lib/supabase-admin.ts`: cliente admin de Supabase para servidor.
 - `docs/supabase-schema.sql`: tablas y trigger iniciales de Supabase.
+- `docs/production-checklist.md`: orden recomendado para configurar produccion.
 - `.env.example`: variables necesarias.
 
 ## Variables de entorno en Vercel
@@ -92,6 +93,14 @@ customer.subscription.deleted
 ## Despliegue
 
 Sube todos los archivos del proyecto a GitHub y deja que Vercel redepliegue. Al detectar `package.json`, Vercel lo tratara como app Next.js.
+
+Tras desplegar, visita:
+
+```text
+https://tu-dominio.vercel.app/setup
+```
+
+Esa pagina indica que bloques de configuracion siguen pendientes sin mostrar ninguna clave.
 
 ## Siguiente fase
 
