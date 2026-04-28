@@ -11,16 +11,6 @@ const checks: Check[] = [
     help: "NEXT_PUBLIC_SITE_URL debe apuntar a tu dominio de Vercel.",
   },
   {
-    label: "Supabase publico",
-    ok: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
-    help: "Necesario para registro e inicio de sesion desde el navegador.",
-  },
-  {
-    label: "Supabase servidor",
-    ok: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
-    help: "Necesario para comprobar perfiles y membresias desde las rutas API.",
-  },
-  {
     label: "OpenAI",
     ok: Boolean(process.env.OPENAI_API_KEY),
     help: "Necesario para que el chat responda con IA real.",
@@ -44,13 +34,15 @@ export default function SetupPage() {
     <main className="setup-page">
       <section className="setup-hero">
         <a className="brand" href="/" aria-label="Volver a OpoCompi">
-          <span className="brand-mark">OC</span>
+          <span className="brand-mark logo-mark">
+            <img src="/brand/opocompi-logo.png" alt="" />
+          </span>
           <span>OpoCompi</span>
         </a>
         <p className="eyebrow">Estado de produccion</p>
         <h1>Configuracion</h1>
         <p>
-          Esta pagina comprueba si Vercel tiene las variables necesarias para convertir la demo en producto real.
+          Esta pagina comprueba si Vercel tiene las variables necesarias para el MVP: prueba gratuita, pago con Stripe y chat IA.
           No muestra claves, solo si existen.
         </p>
         <div className="setup-score">
@@ -74,8 +66,8 @@ export default function SetupPage() {
       <section className="setup-next">
         <h2>Siguiente paso</h2>
         <p>
-          Cuando todos los bloques esten configurados, prueba el flujo completo: login por email, pago de prueba en
-          Stripe, vuelta a la web y mensaje al chat.
+          Cuando todos los bloques esten configurados, prueba el flujo completo: 3 mensajes gratis, pago de prueba en
+          Stripe, vuelta a la web y chat desbloqueado.
         </p>
         <a className="btn btn-primary" href="/">Volver a la app</a>
       </section>

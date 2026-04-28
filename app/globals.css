@@ -74,6 +74,18 @@ select {
   font-size: 13px;
 }
 
+.logo-mark {
+  overflow: hidden;
+  background: var(--white);
+  border: 1px solid rgba(21, 63, 134, 0.18);
+}
+
+.logo-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .nav {
   gap: 22px;
   color: var(--muted);
@@ -157,6 +169,17 @@ select {
   position: relative;
   z-index: 1;
   max-width: 760px;
+}
+
+.hero-logo {
+  width: clamp(92px, 12vw, 148px);
+  height: clamp(92px, 12vw, 148px);
+  margin-bottom: 22px;
+  object-fit: cover;
+  background: var(--white);
+  border: 2px solid rgba(255, 255, 255, 0.62);
+  border-radius: 18px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.24);
 }
 
 .eyebrow {
@@ -529,6 +552,36 @@ select {
   gap: 18px;
 }
 
+.pricing-grid.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.purchase-form {
+  max-width: 640px;
+  margin-bottom: 18px;
+  padding: 18px;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.purchase-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.purchase-form input {
+  min-height: 46px;
+  width: 100%;
+  padding: 0 12px;
+  color: var(--ink);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
 .price-card {
   position: relative;
   padding: 24px;
@@ -708,6 +761,7 @@ select {
   .status-band,
   .app-shell,
   .pricing-grid,
+  .pricing-grid.two,
   .test-builder,
   .setup-grid {
     grid-template-columns: 1fr;

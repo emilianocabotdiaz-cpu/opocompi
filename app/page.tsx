@@ -1,7 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase-browser";
+import { FormEvent, useEffect, useState } from "react";
 
 type Message = {
   id: string;
@@ -47,16 +46,14 @@ const sampleQuestions: Record<string, string[]> = {
 };
 
 export default function Home() {
-  const [email, setEmail] = useState("");
-  const [authMessage, setAuthMessage] = useState("");
   const [pageNotice, setPageNotice] = useState("");
-  const [authLoading, setAuthLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState<"monthly" | "yearly" | null>(null);
-  const [access, setAccess] = useState(!isSupabaseConfigured);
-  const [subscriptionStatus, setSubscriptionStatus] = useState(isSupabaseConfigured ? "sin sesion" : "demo");
+  const [paidAccess, setPaidAccess] = useState(false);
+  const [demoUses, setDemoUses] = useState(0);
   const [mode, setMode] = useState("dudas");
   const [prompt, setPrompt] = useState("");
   const [busy, setBusy] = useState(false);
+  const [checkoutEmail, setCheckoutEmail] = useState("");
   const [topic, setTopic] = useState(topics[0]);
   const [level, setLevel] = useState("Base");
   const [testReady, setTestReady] = useState(false);
@@ -64,113 +61,50 @@ export default function Home() {
     {
       id: "welcome",
       role: "assistant",
-      text: "Estoy contigo. Preguntame una duda del temario, pideme un test o dime como llevas la semana.",
+      text: "Puedes probarme gratis con 3 mensajes. Preguntame una duda, pideme un test o dime como llevas la semana.",
     },
   ]);
 
-  const memberLabel = useMemo(() => {
-    if (access) return subscriptionStatus === "demo" ? "Modo demo activo" : "Membresia activa";
-    return isSupabaseConfigured ? "Membresia inactiva" : "Modo demo";
-  }, [access, subscriptionStatus]);
-
   useEffect(() => {
-    async function loadSession() {
-      if (!supabase) return;
+    const params = new URLSearchParams(window.location.search);
+    const storedPaidAccess = localStorage.getItem("opocompi-paid-access") === "true";
+    const storedUses = Number(localStorage.getItem("opocompi-demo-uses") ?? "0");
 
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (!token) return;
-
-      const response = await fetch("/api/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.ok) {
-        const profile = await response.json();
-        setAccess(Boolean(profile.hasAccess));
-        setSubscriptionStatus(profile.subscriptionStatus ?? "inactive");
-      }
-    }
-
-    loadSession();
-
-    const authListener = supabase?.auth.onAuthStateChange(() => {
-      loadSession();
-    });
-
-    return () => {
-      authListener?.data.subscription.unsubscribe();
-    };
-  }, []);
-
-  async function login(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setAuthMessage("");
-    setPageNotice("");
-    setAuthLoading(true);
-
-    try {
-      if (!supabase) {
-        setAccess(true);
-        setSubscriptionStatus("demo");
-        setAuthMessage("Demo activada. Configura Supabase en Vercel para login real.");
-        setPageNotice("Demo activada. Supabase aun no esta configurado en Vercel.");
-        return;
-      }
-
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
-      const result = await response.json();
-
-      const message = response.ok
-        ? result.message
-        : result.error ?? "No se pudo enviar el enlace de acceso.";
-      setAuthMessage(message);
-      setPageNotice(message);
-    } catch {
-      const message = "No se pudo llamar a /api/login. Revisa el ultimo despliegue de Vercel.";
-      setAuthMessage(message);
-      setPageNotice(message);
-    } finally {
-      setAuthLoading(false);
-    }
-  }
-
-  async function startCheckout(plan: "monthly" | "yearly") {
-    setPageNotice("");
-    setCheckoutLoading(plan);
-
-    if (!supabase) {
-      setAccess(true);
-      setSubscriptionStatus("demo");
-      setPageNotice("Demo activada. Para pago real faltan Supabase y Stripe configurados en Vercel.");
-      setCheckoutLoading(null);
+    if (params.get("checkout") === "success") {
+      localStorage.setItem("opocompi-paid-access", "true");
+      setPaidAccess(true);
+      setPageNotice("Pago completado. Tu chat queda desbloqueado en este dispositivo.");
+      window.history.replaceState({}, "", window.location.pathname);
       return;
     }
 
-    try {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (!token) {
-        const message = "Primero inicia sesion con tu email. Despues podras contratar la membresia.";
-        setAuthMessage(message);
-        setPageNotice(message);
-        document.querySelector("#asistente")?.scrollIntoView({ behavior: "smooth", block: "start" });
-        return;
-      }
+    if (params.get("checkout") === "cancelled") {
+      setPageNotice("Pago cancelado. Puedes seguir usando la prueba gratuita si te quedan mensajes.");
+      window.history.replaceState({}, "", window.location.pathname);
+    }
 
+    setPaidAccess(storedPaidAccess);
+    setDemoUses(Number.isFinite(storedUses) ? storedUses : 0);
+  }, []);
+
+  async function startCheckout(plan: "monthly" | "yearly") {
+    setPageNotice("");
+
+    if (!checkoutEmail.trim()) {
+      setPageNotice("Escribe tu email en la tarjeta de precios para contratar la membresia.");
+      document.querySelector("#membresia")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
+    setCheckoutLoading(plan);
+
+    try {
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, email: checkoutEmail }),
       });
 
       const checkout = await response.json();
@@ -192,14 +126,20 @@ export default function Home() {
     const text = prompt.trim();
     if (!text) return;
 
+    if (!paidAccess && demoUses >= 3) {
+      setPageNotice("Has usado los 3 mensajes gratuitos. Contrata la membresia para desbloquear el chat completo.");
+      document.querySelector("#membresia")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
     setMessages((current) => [...current, { id: crypto.randomUUID(), role: "user", text }]);
     setPrompt("");
     setBusy(true);
 
-    let token = "";
-    if (supabase) {
-      const { data } = await supabase.auth.getSession();
-      token = data.session?.access_token ?? "";
+    if (!paidAccess) {
+      const nextUses = demoUses + 1;
+      setDemoUses(nextUses);
+      localStorage.setItem("opocompi-demo-uses", String(nextUses));
     }
 
     try {
@@ -207,7 +147,6 @@ export default function Home() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ message: text, mode }),
       });
@@ -225,16 +164,17 @@ export default function Home() {
     <>
       <header className="topbar">
         <a className="brand" href="#inicio" aria-label="OpoCompi inicio">
-          <span className="brand-mark">OC</span>
+          <span className="brand-mark logo-mark">
+            <img src="/brand/opocompi-logo.png" alt="" />
+          </span>
           <span>OpoCompi</span>
         </a>
         <nav className="nav" aria-label="Navegacion principal">
-          <a href="#asistente">Asistente</a>
+          <a href="#asistente">Probar chat</a>
           <a href="#test">Tests</a>
-          <a href="#membresia">Membresia</a>
-          <a href="/setup">Setup</a>
+          <a href="#membresia">Precios</a>
         </nav>
-        <a className="btn btn-primary" href="#membresia">Acceder</a>
+        <a className="btn btn-primary" href="#membresia">Contratar</a>
       </header>
 
       <main>
@@ -249,39 +189,40 @@ export default function Home() {
             <img src="https://images.unsplash.com/photo-1521727857535-28d2047314ac?auto=format&fit=crop&w=1600&q=80" alt="" />
           </div>
           <div className="hero-content">
-            <p className="eyebrow">Preparacion acompanada para opositores</p>
+            <img className="hero-logo" src="/brand/opocompi-logo.png" alt="Logotipo de OpoCompi" />
+            <p className="eyebrow">Tu companero de oposicion</p>
             <h1>OpoCompi</h1>
             <p className="hero-copy">
-              Asistente IA para resolver dudas, crear tests tipo examen y sostener la motivacion durante la oposicion a Policia Nacional.
+              Resuelve dudas, genera tests y recibe apoyo de estudio mientras preparas Policia Nacional. Pruebalo gratis con 3 mensajes.
             </p>
             <div className="hero-actions">
-              <a className="btn btn-primary" href="#asistente">Entrar al asistente</a>
-              <a className="btn btn-secondary" href="#membresia">Ver membresia</a>
+              <a className="btn btn-primary" href="#asistente">Probar 3 mensajes</a>
+              <a className="btn btn-secondary" href="#membresia">Ver precios</a>
             </div>
           </div>
         </section>
 
         <section className="status-band" aria-label="Resumen de funciones">
           <article>
-            <span>IA</span>
-            <p>Ruta server-side preparada para OpenAI sin exponer claves.</p>
+            <span>Dudas</span>
+            <p>Explicaciones claras para estudiar sin atascarte.</p>
           </article>
           <article>
-            <span>Login</span>
-            <p>Supabase Auth listo para acceso por email.</p>
+            <span>Tests</span>
+            <p>Preguntas por bloque y entrenamiento tipo examen.</p>
           </article>
           <article>
-            <span>Pago</span>
-            <p>Stripe Checkout preparado para planes mensual y anual.</p>
+            <span>Animo</span>
+            <p>Un apoyo constante para sostener la rutina.</p>
           </article>
         </section>
 
         <section id="asistente" className="workspace">
           <div className="section-heading">
-            <p className="eyebrow">Zona privada</p>
+            <p className="eyebrow">Prueba gratuita</p>
             <h2>Chat de acompanamiento</h2>
             <p>
-              Cuando configures Supabase, Stripe y OpenAI en Vercel, esta zona funcionara con login, membresia y respuesta IA real.
+              Usa 3 mensajes gratis. Al contratar la membresia, el chat queda desbloqueado para seguir estudiando.
             </p>
           </div>
 
@@ -289,23 +230,10 @@ export default function Home() {
             <aside className="side-panel">
               <div>
                 <p className="panel-label">Estado</p>
-                <div className={`member-badge ${access ? "active" : "locked"}`}>{memberLabel}</div>
+                <div className={`member-badge ${paidAccess ? "active" : "locked"}`}>
+                  {paidAccess ? "Membresia activa" : `Prueba ${Math.min(demoUses, 3)}/3`}
+                </div>
               </div>
-
-              <form className="login-card" onSubmit={login}>
-                <p className="panel-label">Acceso</p>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  placeholder="tu@email.com"
-                  required={Boolean(supabase)}
-                />
-                <button className="btn btn-dark" type="submit">
-                  {authLoading ? "Enviando..." : supabase ? "Enviar enlace" : "Activar demo"}
-                </button>
-                {authMessage ? <small>{authMessage}</small> : null}
-              </form>
 
               <div className="focus-card">
                 <p className="panel-label">Modo de ayuda</p>
@@ -325,14 +253,6 @@ export default function Home() {
             </aside>
 
             <section className="chat-card" aria-label="Chat con el asistente">
-              {!access ? (
-                <div className="locked-overlay">
-                  <h3>Activa tu membresia para entrar al chat</h3>
-                  <p>Inicia sesion y contrata un plan para desbloquear el asistente, los tests y el seguimiento.</p>
-                  <a className="btn btn-primary" href="#membresia">Ver planes</a>
-                </div>
-              ) : null}
-
               <div className="chat-messages" aria-live="polite">
                 {messages.map((message) => (
                   <article className={`message ${message.role}`} key={message.id}>
@@ -347,10 +267,10 @@ export default function Home() {
                   onChange={(event) => setPrompt(event.target.value)}
                   type="text"
                   placeholder="Ej.: Hazme 5 preguntas sobre Constitucion Espanola"
-                  disabled={!access || busy}
+                  disabled={busy}
                 />
-                <button className="btn btn-primary" type="submit" disabled={!access || busy}>
-                  {busy ? "Pensando..." : "Enviar"}
+                <button className="btn btn-primary" type="submit" disabled={busy}>
+                  {busy ? "Pensando..." : paidAccess ? "Enviar" : `Enviar (${Math.max(0, 3 - demoUses)} gratis)`}
                 </button>
               </form>
             </section>
@@ -403,45 +323,46 @@ export default function Home() {
 
         <section id="membresia" className="pricing">
           <div className="section-heading compact">
-            <p className="eyebrow">Acceso privado</p>
-            <h2>Membresia para opositores</h2>
-            <p>Stripe Checkout esta preparado. Solo faltan las claves y los IDs de precio en Vercel.</p>
+            <p className="eyebrow">Membresia</p>
+            <h2>Acceso completo al chat</h2>
+            <p>Introduce tu email, elige un plan y paga con Stripe. Al volver del pago, el chat quedara desbloqueado.</p>
           </div>
-          <div className="pricing-grid">
+          <div className="purchase-form">
+            <label>
+              Email para la membresia
+              <input
+                type="email"
+                value={checkoutEmail}
+                onChange={(event) => setCheckoutEmail(event.target.value)}
+                placeholder="tu@email.com"
+              />
+            </label>
+          </div>
+          <div className="pricing-grid two">
             <article className="price-card">
               <h3>Mensual</h3>
               <p className="price">9,90 EUR<span>/mes</span></p>
               <ul>
                 <li>Chat IA privado</li>
                 <li>Tests por bloque</li>
-                <li>Historial de progreso</li>
+                <li>Acompanamiento motivacional</li>
               </ul>
               <button className="btn btn-secondary" type="button" onClick={() => startCheckout("monthly")}>
                 {checkoutLoading === "monthly" ? "Abriendo pago..." : "Contratar mensual"}
               </button>
             </article>
             <article className="price-card featured">
-              <div className="tag">Recomendado</div>
+              <div className="tag">Ahorro anual</div>
               <h3>Oposicion completa</h3>
               <p className="price">90,90 EUR<span>/ano</span></p>
               <ul>
                 <li>Todo lo del plan mensual</li>
-                <li>Plan semanal personalizado</li>
-                <li>Modo animo y seguimiento</li>
+                <li>Mejor precio para preparacion completa</li>
+                <li>Acceso continuado al chat</li>
               </ul>
               <button className="btn btn-primary" type="button" onClick={() => startCheckout("yearly")}>
                 {checkoutLoading === "yearly" ? "Abriendo pago..." : "Contratar anual"}
               </button>
-            </article>
-            <article className="price-card">
-              <h3>Academia</h3>
-              <p className="price">A medida</p>
-              <ul>
-                <li>Panel para preparadores</li>
-                <li>Usuarios por grupo</li>
-                <li>Contenido propio</li>
-              </ul>
-              <a className="btn btn-secondary" href="mailto:hola@opocompi.com">Solicitar demo</a>
             </article>
           </div>
         </section>

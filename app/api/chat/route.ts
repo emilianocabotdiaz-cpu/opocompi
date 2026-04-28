@@ -1,44 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 const fallbackReply =
   "Ahora mismo la IA no esta configurada. Cuando anadas OPENAI_API_KEY en Vercel, respondere dudas, generare tests y acompanare el estudio desde el servidor.";
-
-async function userHasAccess(request: NextRequest) {
-  const supabase = getSupabaseAdmin();
-
-  if (!supabase) {
-    return true;
-  }
-
-  const token = request.headers.get("authorization")?.replace("Bearer ", "");
-  if (!token) return false;
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser(token);
-
-  if (!user) return false;
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("subscription_status")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  return profile?.subscription_status === "active" || profile?.subscription_status === "trialing";
-}
 
 export async function POST(request: NextRequest) {
   const { message, mode } = (await request.json()) as { message?: string; mode?: string };
 
   if (!message?.trim()) {
     return NextResponse.json({ error: "El mensaje esta vacio." }, { status: 400 });
-  }
-
-  const allowed = await userHasAccess(request);
-  if (!allowed) {
-    return NextResponse.json({ error: "Necesitas una membresia activa." }, { status: 403 });
   }
 
   if (!process.env.OPENAI_API_KEY) {

@@ -7,26 +7,24 @@ App web para un asistente guiado por IA que acompana a opositores a Policia Naci
 Esta version ya esta preparada como app Next.js para Vercel:
 
 - Landing publica.
-- Login por email con Supabase Auth.
-- Estado de membresia desde Supabase.
+- Landing publica con informacion y precios.
+- Chat con 3 mensajes gratis para probar el producto.
 - Stripe Checkout para plan mensual y anual.
-- Webhook de Stripe para activar o desactivar la membresia.
+- Stripe Checkout desbloquea el chat al volver del pago.
 - Chat server-side conectado a OpenAI cuando se configure `OPENAI_API_KEY`.
 - Generador inicial de tests.
 
-Si faltan claves de Supabase, Stripe u OpenAI, la app muestra modo demo o mensajes de configuracion.
+Si faltan claves de Stripe u OpenAI, la app muestra mensajes de configuracion. Supabase queda reservado para una fase posterior con cuentas completas.
 
 ## Archivos principales
 
 - `app/page.tsx`: interfaz principal.
 - `app/globals.css`: estilos.
 - `app/api/chat/route.ts`: endpoint del asistente IA.
-- `app/api/checkout/route.ts`: endpoint para Stripe Checkout.
+- `app/api/checkout/route.ts`: endpoint para Stripe Checkout sin login previo.
 - `app/api/stripe-webhook/route.ts`: webhook de Stripe.
 - `app/api/me/route.ts`: comprueba usuario y membresia.
-- `lib/supabase-browser.ts`: cliente publico de Supabase.
-- `lib/supabase-admin.ts`: cliente admin de Supabase para servidor.
-- `docs/supabase-schema.sql`: tablas y trigger iniciales de Supabase.
+- `docs/supabase-schema.sql`: esquema reservado para una fase posterior con cuentas reales.
 - `docs/production-checklist.md`: orden recomendado para configurar produccion.
 - `.env.example`: variables necesarias.
 
@@ -37,10 +35,6 @@ Configura estas variables en Vercel, dentro de Project Settings -> Environment V
 ```text
 NEXT_PUBLIC_SITE_URL=https://tu-dominio.vercel.app
 
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-5.4-mini
 
@@ -49,15 +43,6 @@ STRIPE_PRICE_MONTHLY=
 STRIPE_PRICE_YEARLY=
 STRIPE_WEBHOOK_SECRET=
 ```
-
-## Supabase
-
-1. Crea un proyecto en Supabase.
-2. En SQL Editor, ejecuta el contenido de `docs/supabase-schema.sql`.
-3. Copia `Project URL` a `NEXT_PUBLIC_SUPABASE_URL`.
-4. Copia `anon public` a `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-5. Copia `service_role` a `SUPABASE_SERVICE_ROLE_KEY`.
-6. En Authentication, activa login por email.
 
 ## Stripe
 
@@ -104,8 +89,9 @@ Esa pagina indica que bloques de configuracion siguen pendientes sin mostrar nin
 
 ## Siguiente fase
 
+- Validar el embudo: landing -> 3 mensajes gratis -> pago -> chat desbloqueado.
 - Guardar conversaciones.
 - Generar tests con IA y respuestas correctas estructuradas.
 - Crear banco de preguntas validado.
+- Anadir login real y pagina de cuenta cuando el embudo de pago ya este probado.
 - Anadir panel de administracion para temario y preguntas.
-- Crear pagina de cuenta para gestionar suscripcion.
