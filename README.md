@@ -27,6 +27,7 @@ Si faltan claves de Stripe u OpenAI, la app muestra mensajes de configuracion. S
 - `app/api/me/route.ts`: comprueba usuario y membresia.
 - `lib/opocompi-brain.ts`: instrucciones y contexto base de la IA propia.
 - `docs/knowledge/`: carpeta para temario, preguntas y estilo de OpoCompi.
+- `docs/knowledge-workflow.md`: proceso para alimentar la IA con contenido validado.
 - `docs/supabase-schema.sql`: esquema reservado para una fase posterior con cuentas reales.
 - `docs/production-checklist.md`: orden recomendado para configurar produccion.
 - `.env.example`: variables necesarias.
