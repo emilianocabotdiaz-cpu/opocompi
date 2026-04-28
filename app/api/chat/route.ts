@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { buildOpoCompiInput, OPOCOMPI_SYSTEM_PROMPT } from "@/lib/opocompi-brain";
 
 const fallbackReply =
-  "Ahora mismo la IA no esta configurada. Cuando anadas OPENAI_API_KEY en Vercel, respondere dudas, generare tests y acompanare el estudio desde el servidor.";
+  "Ahora mismo la IA real no esta configurada. Cuando anadas OPENAI_API_KEY en Vercel, OpoCompi respondera con su personalidad propia, generara tests y acompanara el estudio desde el servidor.";
 
 export async function POST(request: NextRequest) {
   const { message, mode } = (await request.json()) as { message?: string; mode?: string };
@@ -23,9 +24,8 @@ export async function POST(request: NextRequest) {
     },
     body: JSON.stringify({
       model,
-      instructions:
-        "Eres OpoCompi, un asistente para opositores a Policia Nacional en Espana. Resuelve dudas con claridad, genera tests cuando te lo pidan y anima con tono cercano. Si una respuesta juridica requiere exactitud normativa y no estas seguro, indica que debe verificarse con fuente oficial o preparador. No inventes articulos.",
-      input: `Modo: ${mode ?? "dudas"}\nMensaje del opositor: ${message}`,
+      instructions: OPOCOMPI_SYSTEM_PROMPT,
+      input: buildOpoCompiInput(message, mode),
     }),
   });
 

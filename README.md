@@ -12,6 +12,7 @@ Esta version ya esta preparada como app Next.js para Vercel:
 - Stripe Checkout para plan mensual y anual.
 - Stripe Checkout desbloquea el chat al volver del pago.
 - Chat server-side conectado a OpenAI cuando se configure `OPENAI_API_KEY`.
+- Cerebro propio de OpoCompi con instrucciones, tono, reglas y contexto inicial.
 - Generador inicial de tests.
 
 Si faltan claves de Stripe u OpenAI, la app muestra mensajes de configuracion. Supabase queda reservado para una fase posterior con cuentas completas.
@@ -24,6 +25,8 @@ Si faltan claves de Stripe u OpenAI, la app muestra mensajes de configuracion. S
 - `app/api/checkout/route.ts`: endpoint para Stripe Checkout sin login previo.
 - `app/api/stripe-webhook/route.ts`: webhook de Stripe.
 - `app/api/me/route.ts`: comprueba usuario y membresia.
+- `lib/opocompi-brain.ts`: instrucciones y contexto base de la IA propia.
+- `docs/knowledge/`: carpeta para temario, preguntas y estilo de OpoCompi.
 - `docs/supabase-schema.sql`: esquema reservado para una fase posterior con cuentas reales.
 - `docs/production-checklist.md`: orden recomendado para configurar produccion.
 - `.env.example`: variables necesarias.
@@ -75,6 +78,18 @@ customer.subscription.deleted
 2. Pegala en Vercel como `OPENAI_API_KEY`.
 3. Deja `OPENAI_MODEL=gpt-5.4-mini` para empezar con buena relacion coste/latencia.
 
+La personalidad de OpoCompi esta en:
+
+```text
+lib/opocompi-brain.ts
+```
+
+El conocimiento propio que iremos validando vive en:
+
+```text
+docs/knowledge/
+```
+
 ## Despliegue
 
 Sube todos los archivos del proyecto a GitHub y deja que Vercel redepliegue. Al detectar `package.json`, Vercel lo tratara como app Next.js.
@@ -90,6 +105,8 @@ Esa pagina indica que bloques de configuracion siguen pendientes sin mostrar nin
 ## Siguiente fase
 
 - Validar el embudo: landing -> 3 mensajes gratis -> pago -> chat desbloqueado.
+- Alimentar `docs/knowledge/` con temario y preguntas revisadas.
+- Conectar la base de conocimiento al chat con busqueda semantica.
 - Guardar conversaciones.
 - Generar tests con IA y respuestas correctas estructuradas.
 - Crear banco de preguntas validado.
