@@ -8,6 +8,13 @@ type Message = {
   text: string;
 };
 
+type TestQuestion = {
+  question: string;
+  options: string[];
+  correct: string;
+  explanation: string;
+};
+
 const modes = [
   { id: "dudas", label: "Dudas de temario" },
   { id: "test", label: "Generar test" },
@@ -17,32 +24,162 @@ const modes = [
 
 const topics = ["Constitucion Espanola", "Derecho Penal", "Extranjeria", "Ortografia", "Psicotecnicos"];
 
-const sampleQuestions: Record<string, string[]> = {
+const sampleQuestions: Record<string, TestQuestion[]> = {
   "Constitucion Espanola": [
-    "Que valores superiores proclama el articulo 1.1 de la Constitucion Espanola?",
-    "Donde reside la soberania nacional segun la Constitucion?",
-    "Que forma politica tiene el Estado espanol?",
+    {
+      question: "Que valores superiores proclama el articulo 1.1 de la Constitucion Espanola?",
+      options: [
+        "Unidad, autonomia, solidaridad y justicia.",
+        "Libertad, justicia, igualdad y pluralismo politico.",
+        "Legalidad, jerarquia normativa, publicidad y seguridad juridica.",
+        "Igualdad, merito, capacidad y publicidad.",
+      ],
+      correct: "B",
+      explanation: "El articulo 1.1 recoge libertad, justicia, igualdad y pluralismo politico. La opcion C mezcla principios del articulo 9.3.",
+    },
+    {
+      question: "Donde reside la soberania nacional segun la Constitucion?",
+      options: ["En las Cortes Generales.", "En el Rey.", "En el pueblo espanol.", "En el Gobierno."],
+      correct: "C",
+      explanation: "El articulo 1.2 establece que la soberania nacional reside en el pueblo espanol.",
+    },
+    {
+      question: "Cual es la forma politica del Estado espanol?",
+      options: ["Republica parlamentaria.", "Monarquia constitucional federal.", "Monarquia parlamentaria.", "Estado autonomico presidencialista."],
+      correct: "C",
+      explanation: "El articulo 1.3 establece que la forma politica del Estado espanol es la Monarquia parlamentaria.",
+    },
   ],
   "Derecho Penal": [
-    "Que diferencia hay entre dolo directo y dolo eventual?",
-    "Cuando puede apreciarse tentativa en un delito?",
-    "Que finalidad tienen las penas privativas de derechos?",
+    {
+      question: "En terminos generales, que caracteriza al dolo eventual?",
+      options: [
+        "El autor quiere directamente el resultado como fin principal.",
+        "El autor preve el resultado como posible y aun asi continua aceptando el riesgo.",
+        "El autor actua sin ninguna representacion del resultado.",
+        "El autor actua siempre por error invencible.",
+      ],
+      correct: "B",
+      explanation: "En el dolo eventual el sujeto no busca necesariamente el resultado, pero lo asume como posible y continua actuando.",
+    },
+    {
+      question: "Cuando puede hablarse de tentativa de forma general?",
+      options: [
+        "Cuando solo existe una idea interna no exteriorizada.",
+        "Cuando se inicia la ejecucion del delito pero no se consuma por causas ajenas a la voluntad del autor.",
+        "Cuando el delito se consuma completamente.",
+        "Cuando la conducta es siempre imprudente.",
+      ],
+      correct: "B",
+      explanation: "La tentativa exige inicio de ejecucion y falta de consumacion por causas independientes de la voluntad del autor.",
+    },
+    {
+      question: "Que diferencia basica hay entre dolo e imprudencia?",
+      options: [
+        "En el dolo hay voluntad o aceptacion del resultado; en la imprudencia falta el cuidado debido.",
+        "La imprudencia siempre implica intencion directa.",
+        "El dolo solo existe en infracciones administrativas.",
+        "No existe diferencia juridica relevante.",
+      ],
+      correct: "A",
+      explanation: "El dolo se relaciona con querer o aceptar el resultado; la imprudencia con infringir el deber de cuidado.",
+    },
   ],
   Extranjeria: [
-    "Que situaciones administrativas puede tener una persona extranjera en Espana?",
-    "Que diferencia hay entre estancia y residencia?",
-    "Que autoridad puede iniciar un expediente sancionador en materia de extranjeria?",
+    {
+      question: "Cual es la diferencia general entre estancia y residencia?",
+      options: [
+        "La estancia es permanencia temporal; la residencia implica autorizacion para vivir en Espana durante un periodo mas estable.",
+        "La residencia solo puede durar 24 horas.",
+        "La estancia equivale siempre a nacionalidad espanola.",
+        "No existe diferencia entre ambas figuras.",
+      ],
+      correct: "A",
+      explanation: "De forma general, la estancia es permanencia temporal y la residencia supone una autorizacion de permanencia mas estable.",
+    },
+    {
+      question: "Que debe hacer OpoCompi si una pregunta depende de normativa de extranjeria vigente?",
+      options: [
+        "Inventar el articulo mas probable.",
+        "Responder con cautela y recomendar verificar fuente oficial actualizada.",
+        "Citar academias como fuente definitiva.",
+        "Evitar siempre responder cualquier concepto.",
+      ],
+      correct: "B",
+      explanation: "Extranjeria cambia y exige prudencia: BOE y fuentes oficiales recientes tienen prioridad.",
+    },
+    {
+      question: "Que enfoque es mas seguro al estudiar extranjeria para oposicion?",
+      options: [
+        "Memorizar esquemas antiguos sin comprobar fecha.",
+        "Priorizar conceptos base y contrastar articulos o procedimientos con normativa vigente.",
+        "Estudiar solo casos practicos sin teoria.",
+        "No hacer tests porque la materia cambia.",
+      ],
+      correct: "B",
+      explanation: "La base conceptual ayuda, pero los detalles normativos deben contrastarse con fuente oficial actualizada.",
+    },
   ],
   Ortografia: [
-    "Elige la forma correcta: prever / preveer.",
-    "Cuando llevan tilde los monosilabos?",
-    "Identifica la palabra mal escrita: exorbitante, exuberante, exhuberante.",
+    {
+      question: "Elige la forma correcta.",
+      options: ["Preveer.", "Prever.", "Prevéer.", "Preveher."],
+      correct: "B",
+      explanation: "La forma correcta es prever. 'Preveer' es una forma incorrecta muy habitual.",
+    },
+    {
+      question: "Cuando llevan tilde los monosilabos?",
+      options: [
+        "Siempre.",
+        "Nunca, salvo casos de tilde diacritica.",
+        "Solo si terminan en vocal.",
+        "Solo si son verbos.",
+      ],
+      correct: "B",
+      explanation: "Los monosilabos no se tildan por regla general, salvo casos de tilde diacritica como tu/tu, el/el, si/si.",
+    },
+    {
+      question: "Identifica la palabra mal escrita.",
+      options: ["Exorbitante.", "Exuberante.", "Exhuberante.", "Exhaustivo."],
+      correct: "C",
+      explanation: "La forma correcta es exuberante, sin h intercalada.",
+    },
   ],
   Psicotecnicos: [
-    "Completa la serie: 3, 6, 12, 24, ...",
-    "Si todos los A son B y algunos B son C, que conclusion es segura?",
-    "Ordena mentalmente una secuencia alternando numero, letra y figura.",
+    {
+      question: "Completa la serie: 3, 6, 12, 24, ...",
+      options: ["30.", "36.", "42.", "48."],
+      correct: "D",
+      explanation: "Cada termino se multiplica por 2: 3, 6, 12, 24, 48.",
+    },
+    {
+      question: "Si todos los A son B y algunos B son C, que conclusion es segura?",
+      options: [
+        "Todos los A son C.",
+        "Algunos C son A necesariamente.",
+        "Todos los A son B.",
+        "Ningun B es C.",
+      ],
+      correct: "C",
+      explanation: "La unica conclusion segura es la premisa dada: todos los A son B. No se puede asegurar relacion entre A y C.",
+    },
+    {
+      question: "Serie alfabetica: A, C, F, J, O, ...",
+      options: ["S.", "T.", "U.", "V."],
+      correct: "C",
+      explanation: "Los saltos son +2, +3, +4, +5; el siguiente salto es +6. O + 6 = U.",
+    },
   ],
+};
+
+const paidWelcomeMessage =
+  "Bienvenido compañero, estoy para ayudarte a ser Policía. Lo vas a conseguir y lo vamos a celebrar.";
+
+const modeSupportMessages: Record<string, string> = {
+  dudas: "Perfecto, compañero. Volvemos a dudas de temario: vamos a dejarlo claro, corto y útil para examen.",
+  test: "Vamos con test. Practicar es avanzar: cada fallo corregido te acerca un poco más a tu plaza.",
+  animo: "Estoy contigo. Respira, ordenamos el día y damos el siguiente paso. Esto se construye bloque a bloque.",
+  plan: "Buena decisión. Vamos a organizar el estudio para que hoy salgas con trabajo hecho y cabeza tranquila.",
 };
 
 export default function Home() {
@@ -74,6 +211,13 @@ export default function Home() {
       localStorage.setItem("opocompi-paid-access", "true");
       setPaidAccess(true);
       setPageNotice("Pago completado. Tu chat queda desbloqueado en este dispositivo.");
+      setMessages([
+        {
+          id: "paid-welcome",
+          role: "assistant",
+          text: paidWelcomeMessage,
+        },
+      ]);
       window.history.replaceState({}, "", window.location.pathname);
       return;
     }
@@ -85,7 +229,44 @@ export default function Home() {
 
     setPaidAccess(storedPaidAccess);
     setDemoUses(Number.isFinite(storedUses) ? storedUses : 0);
+
+    const storedMessages = localStorage.getItem("opocompi-chat-messages");
+    if (storedMessages && params.get("checkout") !== "success") {
+      try {
+        const parsedMessages = JSON.parse(storedMessages) as Message[];
+        if (Array.isArray(parsedMessages) && parsedMessages.length > 0) {
+          setMessages(parsedMessages);
+        }
+      } catch {
+        localStorage.removeItem("opocompi-chat-messages");
+      }
+    } else if (storedPaidAccess) {
+      setMessages([
+        {
+          id: "paid-welcome",
+          role: "assistant",
+          text: paidWelcomeMessage,
+        },
+      ]);
+    }
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("opocompi-chat-messages", JSON.stringify(messages));
+  }, [messages]);
+
+  function changeMode(nextMode: string) {
+    if (nextMode === mode) return;
+    setMode(nextMode);
+    setMessages((current) => [
+      ...current,
+      {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        text: modeSupportMessages[nextMode] ?? "Seguimos, compañero. Estoy contigo para avanzar paso a paso.",
+      },
+    ]);
+  }
 
   async function startCheckout(plan: "monthly" | "yearly") {
     setPageNotice("");
@@ -172,9 +353,9 @@ export default function Home() {
         <nav className="nav" aria-label="Navegacion principal">
           <a href="#asistente">Probar chat</a>
           <a href="#test">Tests</a>
-          <a href="#membresia">Precios</a>
+          {!paidAccess ? <a href="#membresia">Precios</a> : null}
         </nav>
-        <a className="btn btn-primary" href="#membresia">Contratar</a>
+        {!paidAccess ? <a className="btn btn-primary" href="#membresia">Contratar</a> : null}
       </header>
 
       <main>
@@ -186,18 +367,18 @@ export default function Home() {
 
         <section id="inicio" className="hero">
           <div className="hero-media" aria-hidden="true">
-            <img src="https://images.unsplash.com/photo-1521727857535-28d2047314ac?auto=format&fit=crop&w=1600&q=80" alt="" />
+            <img src="/brand/police-banner.png" alt="" />
           </div>
           <div className="hero-content">
             <img className="hero-logo" src="/brand/opocompi-logo.png" alt="Logotipo de OpoCompi" />
-            <p className="eyebrow">Tu companero de oposicion</p>
+            <p className="eyebrow">Tu primer compañero en la Policía</p>
             <h1>OpoCompi</h1>
             <p className="hero-copy">
-              Resuelve dudas, genera tests y recibe apoyo de estudio mientras preparas Policia Nacional. Pruebalo gratis con 3 mensajes.
+              El primer asistente para opositores de policía basado en IA generativa propia y totalmente enfocada a Policía Nacional.
             </p>
             <div className="hero-actions">
-              <a className="btn btn-primary" href="#asistente">Probar 3 mensajes</a>
-              <a className="btn btn-secondary" href="#membresia">Ver precios</a>
+              <a className="btn btn-primary" href="#asistente">{paidAccess ? "Ir al chat" : "Probar 3 mensajes"}</a>
+              {!paidAccess ? <a className="btn btn-secondary" href="#membresia">Ver precios</a> : null}
             </div>
           </div>
         </section>
@@ -242,7 +423,7 @@ export default function Home() {
                     <button
                       className={`mode ${mode === item.id ? "active" : ""}`}
                       key={item.id}
-                      onClick={() => setMode(item.id)}
+                      onClick={() => changeMode(item.id)}
                       type="button"
                     >
                       {item.label}
@@ -305,67 +486,70 @@ export default function Home() {
           </div>
           <div className="test-output">
             {testReady
-              ? sampleQuestions[topic].map((question, index) => (
-                  <article className="question" key={question}>
-                    <strong>{index + 1}. {question}</strong>
+              ? sampleQuestions[topic].map((item, index) => (
+                  <article className="question" key={item.question}>
+                    <strong>{index + 1}. {item.question}</strong>
                     <ol type="A">
-                      <li>Respuesta correcta pendiente de validar por preparador.</li>
-                      <li>Distractor plausible para entrenar lectura fina.</li>
-                      <li>Opcion parcialmente correcta con matiz juridico.</li>
-                      <li>Respuesta claramente descartable.</li>
+                      {item.options.map((option) => (
+                        <li key={option}>{option}</li>
+                      ))}
                     </ol>
-                    <p>Nivel: {level}. Responde primero sin apuntes y corrige despues con explicacion.</p>
+                    <p><strong>Respuesta correcta:</strong> {item.correct}</p>
+                    <p>{item.explanation}</p>
+                    <p>Nivel: {level}. Buen trabajo, compañero: corrige el fallo y seguimos avanzando.</p>
                   </article>
                 ))
               : null}
           </div>
         </section>
 
-        <section id="membresia" className="pricing">
-          <div className="section-heading compact">
-            <p className="eyebrow">Membresia</p>
-            <h2>Acceso completo al chat</h2>
-            <p>Introduce tu email, elige un plan y paga con Stripe. Al volver del pago, el chat quedara desbloqueado.</p>
-          </div>
-          <div className="purchase-form">
-            <label>
-              Email para la membresia
-              <input
-                type="email"
-                value={checkoutEmail}
-                onChange={(event) => setCheckoutEmail(event.target.value)}
-                placeholder="tu@email.com"
-              />
-            </label>
-          </div>
-          <div className="pricing-grid two">
-            <article className="price-card">
-              <h3>Mensual</h3>
-              <p className="price">9,90 EUR<span>/mes</span></p>
-              <ul>
-                <li>Chat IA privado</li>
-                <li>Tests por bloque</li>
-                <li>Acompanamiento motivacional</li>
-              </ul>
-              <button className="btn btn-secondary" type="button" onClick={() => startCheckout("monthly")}>
-                {checkoutLoading === "monthly" ? "Abriendo pago..." : "Contratar mensual"}
-              </button>
-            </article>
-            <article className="price-card featured">
-              <div className="tag">Ahorro anual</div>
-              <h3>Oposicion completa</h3>
-              <p className="price">90,90 EUR<span>/ano</span></p>
-              <ul>
-                <li>Todo lo del plan mensual</li>
-                <li>Mejor precio para preparacion completa</li>
-                <li>Acceso continuado al chat</li>
-              </ul>
-              <button className="btn btn-primary" type="button" onClick={() => startCheckout("yearly")}>
-                {checkoutLoading === "yearly" ? "Abriendo pago..." : "Contratar anual"}
-              </button>
-            </article>
-          </div>
-        </section>
+        {!paidAccess ? (
+          <section id="membresia" className="pricing">
+            <div className="section-heading compact">
+              <p className="eyebrow">Membresia</p>
+              <h2>Acceso completo al chat</h2>
+              <p>Introduce tu email, elige un plan y paga con Stripe. Al volver del pago, el chat quedara desbloqueado.</p>
+            </div>
+            <div className="purchase-form">
+              <label>
+                Email para la membresia
+                <input
+                  type="email"
+                  value={checkoutEmail}
+                  onChange={(event) => setCheckoutEmail(event.target.value)}
+                  placeholder="tu@email.com"
+                />
+              </label>
+            </div>
+            <div className="pricing-grid two">
+              <article className="price-card">
+                <h3>Mensual</h3>
+                <p className="price">9,90 EUR<span>/mes</span></p>
+                <ul>
+                  <li>Chat IA privado</li>
+                  <li>Tests por bloque</li>
+                  <li>Acompanamiento motivacional</li>
+                </ul>
+                <button className="btn btn-secondary" type="button" onClick={() => startCheckout("monthly")}>
+                  {checkoutLoading === "monthly" ? "Abriendo pago..." : "Contratar mensual"}
+                </button>
+              </article>
+              <article className="price-card featured">
+                <div className="tag">Ahorro anual</div>
+                <h3>Oposicion completa</h3>
+                <p className="price">90,90 EUR<span>/ano</span></p>
+                <ul>
+                  <li>Todo lo del plan mensual</li>
+                  <li>Mejor precio para preparacion completa</li>
+                  <li>Acceso continuado al chat</li>
+                </ul>
+                <button className="btn btn-primary" type="button" onClick={() => startCheckout("yearly")}>
+                  {checkoutLoading === "yearly" ? "Abriendo pago..." : "Contratar anual"}
+                </button>
+              </article>
+            </div>
+          </section>
+        ) : null}
       </main>
 
       <footer className="footer">
