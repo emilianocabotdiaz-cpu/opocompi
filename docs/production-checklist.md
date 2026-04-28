@@ -22,8 +22,8 @@
 
 ## 3. Stripe
 
-- Crear producto mensual de 19 EUR.
-- Crear producto anual de 149 EUR.
+- Crear producto mensual de 9,90 EUR.
+- Crear producto anual de 90,90 EUR.
 - Copiar ambos price IDs en Vercel.
 - Crear webhook:
 

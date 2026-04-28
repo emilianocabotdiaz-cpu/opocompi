@@ -62,8 +62,8 @@ STRIPE_WEBHOOK_SECRET=
 ## Stripe
 
 1. Crea dos productos/precios:
-   - Mensual: 19 EUR / mes.
-   - Anual: 149 EUR / ano.
+   - Mensual: 9,90 EUR / mes.
+   - Anual: 90,90 EUR / ano.
 2. Copia los price IDs:
    - `STRIPE_PRICE_MONTHLY`
    - `STRIPE_PRICE_YEARLY`

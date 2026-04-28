@@ -358,7 +358,7 @@ export default function Home() {
           <div className="pricing-grid">
             <article className="price-card">
               <h3>Mensual</h3>
-              <p className="price">19 EUR<span>/mes</span></p>
+              <p className="price">9,90 EUR<span>/mes</span></p>
               <ul>
                 <li>Chat IA privado</li>
                 <li>Tests por bloque</li>
@@ -371,7 +371,7 @@ export default function Home() {
             <article className="price-card featured">
               <div className="tag">Recomendado</div>
               <h3>Oposicion completa</h3>
-              <p className="price">149 EUR<span>/ano</span></p>
+              <p className="price">90,90 EUR<span>/ano</span></p>
               <ul>
                 <li>Todo lo del plan mensual</li>
                 <li>Plan semanal personalizado</li>
