@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase-browser";
 
 const modes = [
   { id: "dudas", label: "Dudas de temario" },
@@ -67,6 +68,9 @@ export default function Home() {
   const [prompt, setPrompt] = useState("");
   const [busy, setBusy] = useState(false);
   const [checkoutEmail, setCheckoutEmail] = useState("");
+  const [loginEmail, setLoginEmail] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -77,25 +81,30 @@ export default function Home() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const storedPaidAccess = localStorage.getItem("opocompi-paid-access") === "true";
+    const checkoutSuccess = params.get("checkout") === "success";
+    const checkoutCancelled = params.get("checkout") === "cancelled";
+    const storedPaidAccess = !isSupabaseConfigured && localStorage.getItem("opocompi-paid-access") === "true";
     const storedUses = Number(localStorage.getItem("opocompi-demo-uses") ?? "0");
 
-    if (params.get("checkout") === "success") {
-      localStorage.setItem("opocompi-paid-access", "true");
-      setPaidAccess(true);
-      setPageNotice("Pago completado. Tu chat queda desbloqueado en este dispositivo.");
-      setMessages([
-        {
-          id: "paid-welcome",
-          role: "assistant",
-          text: paidWelcomeMessage,
-        },
-      ]);
+    if (checkoutSuccess) {
+      if (isSupabaseConfigured) {
+        setPageNotice("Pago completado. Estamos comprobando tu membresia; si tarda unos segundos, recarga la pagina.");
+      } else {
+        localStorage.setItem("opocompi-paid-access", "true");
+        setPaidAccess(true);
+        setPageNotice("Pago completado. Tu chat queda desbloqueado en este dispositivo.");
+        setMessages([
+          {
+            id: "paid-welcome",
+            role: "assistant",
+            text: paidWelcomeMessage,
+          },
+        ]);
+      }
       window.history.replaceState({}, "", window.location.pathname);
-      return;
     }
 
-    if (params.get("checkout") === "cancelled") {
+    if (checkoutCancelled) {
       setPageNotice("Pago cancelado. Puedes seguir usando la prueba gratuita si te quedan mensajes.");
       window.history.replaceState({}, "", window.location.pathname);
     }
@@ -104,7 +113,7 @@ export default function Home() {
     setDemoUses(Number.isFinite(storedUses) ? storedUses : 0);
 
     const storedMessages = localStorage.getItem("opocompi-chat-messages");
-    if (storedMessages && params.get("checkout") !== "success" && !storedPaidAccess) {
+    if (storedMessages && !checkoutSuccess && !storedPaidAccess) {
       try {
         const parsedMessages = JSON.parse(storedMessages) as Message[];
         if (Array.isArray(parsedMessages) && parsedMessages.length > 0) {
@@ -122,6 +131,56 @@ export default function Home() {
         },
       ]);
     }
+
+    async function loadSession() {
+      if (!supabase || !isSupabaseConfigured) return;
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        setUserEmail("");
+        return;
+      }
+
+      const email = session.user.email ?? "";
+      setUserEmail(email);
+      setCheckoutEmail((current) => current || email);
+      setLoginEmail((current) => current || email);
+
+      try {
+        const response = await fetch("/api/me", {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+        const profile = await response.json();
+        if (profile.hasAccess) {
+          localStorage.setItem("opocompi-paid-access", "true");
+          setPaidAccess(true);
+          setMessages([
+            {
+              id: "paid-welcome",
+              role: "assistant",
+              text: paidWelcomeMessage,
+            },
+          ]);
+        }
+      } catch {
+        setPageNotice("No pude comprobar la membresia ahora. Si acabas de entrar, recarga en unos segundos.");
+      }
+    }
+
+    loadSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(() => {
+      loadSession();
+    });
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -144,21 +203,29 @@ export default function Home() {
   async function startCheckout(plan: "monthly" | "yearly") {
     setPageNotice("");
 
-    if (!checkoutEmail.trim()) {
-      setPageNotice("Escribe tu email en la tarjeta de precios para contratar la membresia.");
-      document.querySelector("#membresia")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (isSupabaseConfigured && !userEmail) {
+      setPageNotice("Primero inicia sesion. Asi la membresia queda guardada en tu cuenta.");
+      document.querySelector("#login")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
+    if (!userEmail && !checkoutEmail.trim()) {
+      setPageNotice("Escribe tu email para contratar la membresia.");
+      document.querySelector("#login")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
 
     setCheckoutLoading(plan);
 
     try {
+      const session = supabase ? (await supabase.auth.getSession()).data.session : null;
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
-        body: JSON.stringify({ plan, email: checkoutEmail }),
+        body: JSON.stringify({ plan, email: userEmail || checkoutEmail }),
       });
 
       const checkout = await response.json();
@@ -173,6 +240,75 @@ export default function Home() {
     } finally {
       setCheckoutLoading(null);
     }
+  }
+
+  async function loginWithEmail(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPageNotice("");
+
+    if (!loginEmail.trim()) {
+      setPageNotice("Escribe tu email para enviarte el enlace de acceso.");
+      return;
+    }
+
+    setAuthLoading(true);
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: loginEmail }),
+      });
+      const data = await response.json();
+      setPageNotice(data.message ?? data.error ?? "Revisa tu email para entrar.");
+    } catch {
+      setPageNotice("No pude enviar el enlace de acceso. Revisa Supabase y vuelve a intentarlo.");
+    } finally {
+      setAuthLoading(false);
+    }
+  }
+
+  async function loginWithGoogle() {
+    setPageNotice("");
+
+    if (!supabase || !isSupabaseConfigured) {
+      setPageNotice("Supabase no esta configurado todavia para login.");
+      return;
+    }
+
+    setAuthLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+
+    if (error) {
+      setPageNotice(`Supabase: ${error.message}`);
+      setAuthLoading(false);
+    }
+  }
+
+  async function logout() {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+
+    localStorage.removeItem("opocompi-paid-access");
+    localStorage.removeItem("opocompi-chat-messages");
+    setPaidAccess(false);
+    setUserEmail("");
+    setCheckoutEmail("");
+    setMessages([
+      {
+        id: "welcome",
+        role: "assistant",
+        text: trialWelcomeMessage,
+      },
+    ]);
+    setPageNotice("Sesion cerrada. Puedes volver a entrar cuando quieras, compi.");
   }
 
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
@@ -225,10 +361,18 @@ export default function Home() {
         </a>
         <nav className="nav" aria-label="Navegacion principal">
           <a href="#asistente">Probar chat</a>
+          {!userEmail ? <a href="#login">Login</a> : null}
           <a href="/tests">Tests</a>
           {!paidAccess ? <a href="#membresia">Precios</a> : null}
         </nav>
-        {!paidAccess ? <a className="btn btn-primary" href="#membresia">Contratar</a> : null}
+        <div className="topbar-actions">
+          {userEmail ? <span className="session-pill">{userEmail}</span> : null}
+          {userEmail || paidAccess ? (
+            <button className="btn btn-secondary" type="button" onClick={logout}>Salir</button>
+          ) : (
+            <a className="btn btn-primary" href="#login">Entrar</a>
+          )}
+        </div>
       </header>
 
       <main>
@@ -270,6 +414,49 @@ export default function Home() {
             <p>Un apoyo constante para sostener la rutina.</p>
           </article>
         </section>
+
+        {!paidAccess ? (
+          <section id="login" className="auth-section">
+            <div className="section-heading compact">
+              <p className="eyebrow">Acceso</p>
+              <h2>Entra para guardar tu membresia</h2>
+              <p>
+                Inicia sesion antes de pagar. Asi, cuando contrates, OpoCompi sabra que la membresia es tuya en cualquier dispositivo.
+              </p>
+            </div>
+            <div className="auth-card">
+              {userEmail ? (
+                <div className="logged-box">
+                  <strong>Sesion iniciada</strong>
+                  <p>{userEmail}</p>
+                  <a className="btn btn-primary" href="#membresia">Elegir membresia</a>
+                </div>
+              ) : (
+                <>
+                  <form className="auth-form" onSubmit={loginWithEmail}>
+                    <label>
+                      Email
+                      <input
+                        type="email"
+                        value={loginEmail}
+                        onChange={(event) => setLoginEmail(event.target.value)}
+                        placeholder="tu@email.com"
+                      />
+                    </label>
+                    <button className="btn btn-primary" type="submit" disabled={authLoading}>
+                      {authLoading ? "Enviando..." : "Enviar enlace"}
+                    </button>
+                  </form>
+                  <div className="auth-divider"><span>o</span></div>
+                  <button className="btn btn-secondary google-btn" type="button" onClick={loginWithGoogle} disabled={authLoading}>
+                    Entrar con Google
+                  </button>
+                  <p className="auth-help">El enlace llega al correo. Google funcionara si lo tienes activado en Supabase.</p>
+                </>
+              )}
+            </div>
+          </section>
+        ) : null}
 
         {!paidAccess ? (
           <section className="conversion-section">
@@ -424,15 +611,19 @@ export default function Home() {
               <p>Introduce tu email, elige un plan y paga con Stripe. Al volver del pago, el chat quedara desbloqueado.</p>
             </div>
             <div className="purchase-form">
-              <label>
-                Email para la membresia
-                <input
-                  type="email"
-                  value={checkoutEmail}
-                  onChange={(event) => setCheckoutEmail(event.target.value)}
-                  placeholder="tu@email.com"
-                />
-              </label>
+              {userEmail ? (
+                <p className="purchase-session">Vas a contratar con la cuenta <strong>{userEmail}</strong>.</p>
+              ) : (
+                <label>
+                  Email para la membresia
+                  <input
+                    type="email"
+                    value={checkoutEmail}
+                    onChange={(event) => setCheckoutEmail(event.target.value)}
+                    placeholder="tu@email.com"
+                  />
+                </label>
+              )}
             </div>
             <div className="pricing-grid two">
               <article className="price-card">

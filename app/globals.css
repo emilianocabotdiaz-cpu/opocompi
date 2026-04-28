@@ -96,6 +96,29 @@ select {
   color: var(--blue);
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.session-pill {
+  display: inline-flex;
+  max-width: 220px;
+  min-height: 34px;
+  align-items: center;
+  padding: 0 10px;
+  overflow: hidden;
+  color: var(--blue);
+  background: #eef3f8;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .btn {
   display: inline-flex;
   min-height: 42px;
@@ -254,7 +277,8 @@ select {
 .test-section,
 .pricing,
 .conversion-section,
-.how-section {
+.how-section,
+.auth-section {
   padding: 58px clamp(18px, 5vw, 72px);
 }
 
@@ -281,6 +305,82 @@ select {
 
 .conversion-section {
   background: var(--paper);
+}
+
+.auth-section {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(320px, 0.7fr);
+  gap: 24px;
+  align-items: start;
+  background: var(--white);
+}
+
+.auth-card {
+  padding: 20px;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.auth-form {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.auth-form input {
+  min-height: 46px;
+  width: 100%;
+  padding: 0 12px;
+  color: var(--ink);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.auth-divider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 10px;
+  align-items: center;
+  margin: 16px 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  height: 1px;
+  background: var(--line);
+}
+
+.google-btn {
+  width: 100%;
+}
+
+.auth-help,
+.logged-box p,
+.purchase-session {
+  margin: 12px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.logged-box {
+  display: grid;
+  gap: 10px;
+}
+
+.logged-box strong {
+  font-size: 20px;
 }
 
 .benefit-grid {
@@ -1069,6 +1169,7 @@ select {
   .pricing-grid.two,
   .benefit-grid,
   .how-section,
+  .auth-section,
   .test-builder,
   .setup-grid {
     grid-template-columns: 1fr;
@@ -1101,6 +1202,16 @@ select {
     display: none;
   }
 
+  .topbar-actions .btn {
+    display: inline-flex;
+    min-height: 38px;
+    padding-inline: 12px;
+  }
+
+  .session-pill {
+    display: none;
+  }
+
   .hero {
     min-height: 640px;
     padding: 104px 18px 48px;
@@ -1108,7 +1219,8 @@ select {
 
   .workspace,
   .test-section,
-  .pricing {
+  .pricing,
+  .auth-section {
     padding: 54px 16px;
   }
 

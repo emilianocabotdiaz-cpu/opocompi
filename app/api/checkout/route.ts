@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY)
@@ -15,8 +16,24 @@ export async function POST(request: NextRequest) {
     email?: string;
   };
 
-  if (!email?.trim()) {
-    return NextResponse.json({ error: "Introduce un email para contratar la membresia." }, { status: 400 });
+  let customerEmail = email?.trim() ?? "";
+  let userId = "";
+  const token = request.headers.get("authorization")?.replace("Bearer ", "");
+  const supabase = getSupabaseAdmin();
+
+  if (supabase && token) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser(token);
+
+    if (user?.email) {
+      userId = user.id;
+      customerEmail = user.email;
+    }
+  }
+
+  if (!customerEmail) {
+    return NextResponse.json({ error: "Inicia sesion o introduce un email para contratar la membresia." }, { status: 400 });
   }
 
   const price =
@@ -29,13 +46,14 @@ export async function POST(request: NextRequest) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? request.nextUrl.origin;
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
-    customer_email: email.trim(),
+    customer_email: customerEmail,
     line_items: [{ price, quantity: 1 }],
     success_url: `${siteUrl}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${siteUrl}/?checkout=cancelled`,
     metadata: {
-      email: email.trim(),
+      email: customerEmail,
       plan: plan ?? "monthly",
+      ...(userId ? { user_id: userId } : {}),
     },
   });
 

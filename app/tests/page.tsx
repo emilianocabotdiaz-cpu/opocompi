@@ -2,15 +2,54 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { sampleQuestions, topics } from "@/lib/test-bank";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase-browser";
 
 export default function TestsPage() {
   const [paidAccess, setPaidAccess] = useState(false);
+  const [checkingAccess, setCheckingAccess] = useState(true);
   const [topic, setTopic] = useState(topics[0]);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [resolved, setResolved] = useState(false);
 
   useEffect(() => {
-    setPaidAccess(localStorage.getItem("opocompi-paid-access") === "true");
+    async function checkAccess() {
+      if (!isSupabaseConfigured && localStorage.getItem("opocompi-paid-access") === "true") {
+        setPaidAccess(true);
+        setCheckingAccess(false);
+        return;
+      }
+
+      if (!supabase || !isSupabaseConfigured) {
+        setCheckingAccess(false);
+        return;
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        setCheckingAccess(false);
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/me", {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+        const profile = await response.json();
+        if (profile.hasAccess) {
+          localStorage.setItem("opocompi-paid-access", "true");
+          setPaidAccess(true);
+        }
+      } finally {
+        setCheckingAccess(false);
+      }
+    }
+
+    checkAccess();
   }, []);
 
   const questions = sampleQuestions[topic];
@@ -38,9 +77,13 @@ export default function TestsPage() {
         </header>
         <section className="tests-locked">
           <p className="eyebrow">Zona de miembros</p>
-          <h1>Tests desbloqueados con la membresia</h1>
-          <p>Esta zona es para practicar como en examen: respondes primero y corriges despues. Contrata la membresia para entrar.</p>
-          <a className="btn btn-primary" href="/#membresia">Ver membresia</a>
+          <h1>{checkingAccess ? "Comprobando acceso" : "Tests desbloqueados con la membresia"}</h1>
+          <p>
+            {checkingAccess
+              ? "Estamos revisando tu sesion. Un segundo, compi."
+              : "Esta zona es para practicar como en examen: respondes primero y corriges despues. Entra o contrata la membresia para acceder."}
+          </p>
+          {!checkingAccess ? <a className="btn btn-primary" href="/#login">Entrar o contratar</a> : null}
         </section>
       </main>
     );
