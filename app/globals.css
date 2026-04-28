@@ -197,6 +197,18 @@ select {
   border-bottom: 1px solid var(--line);
 }
 
+.page-notice {
+  position: sticky;
+  top: 67px;
+  z-index: 15;
+  padding: 14px clamp(18px, 5vw, 72px);
+  color: var(--ink);
+  background: #fff5d8;
+  border-bottom: 1px solid #edcf79;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
 .status-band article {
   padding: 28px clamp(18px, 5vw, 52px);
   background: var(--white);

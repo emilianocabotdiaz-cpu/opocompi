@@ -49,6 +49,9 @@ const sampleQuestions: Record<string, string[]> = {
 export default function Home() {
   const [email, setEmail] = useState("");
   const [authMessage, setAuthMessage] = useState("");
+  const [pageNotice, setPageNotice] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState<"monthly" | "yearly" | null>(null);
   const [access, setAccess] = useState(!isSupabaseConfigured);
   const [subscriptionStatus, setSubscriptionStatus] = useState(isSupabaseConfigured ? "sin sesion" : "demo");
   const [mode, setMode] = useState("dudas");
@@ -90,55 +93,96 @@ export default function Home() {
     }
 
     loadSession();
+
+    const authListener = supabase?.auth.onAuthStateChange(() => {
+      loadSession();
+    });
+
+    return () => {
+      authListener?.data.subscription.unsubscribe();
+    };
   }, []);
 
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setAuthMessage("");
+    setPageNotice("");
+    setAuthLoading(true);
 
-    if (!supabase) {
-      setAccess(true);
-      setSubscriptionStatus("demo");
-      setAuthMessage("Demo activada. Configura Supabase en Vercel para login real.");
-      return;
+    try {
+      if (!supabase) {
+        setAccess(true);
+        setSubscriptionStatus("demo");
+        setAuthMessage("Demo activada. Configura Supabase en Vercel para login real.");
+        setPageNotice("Demo activada. Supabase aun no esta configurado en Vercel.");
+        return;
+      }
+
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: window.location.origin,
+        },
+      });
+
+      const message = error
+        ? `Error de Supabase: ${error.message}`
+        : "Te hemos enviado un enlace de acceso al email. Revisa tambien spam o promociones.";
+      setAuthMessage(message);
+      setPageNotice(message);
+    } catch {
+      const message = "No se pudo conectar con Supabase. Revisa las variables de entorno y redeploy en Vercel.";
+      setAuthMessage(message);
+      setPageNotice(message);
+    } finally {
+      setAuthLoading(false);
     }
-
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: window.location.origin,
-      },
-    });
-
-    setAuthMessage(error ? error.message : "Te hemos enviado un enlace de acceso al email.");
   }
 
   async function startCheckout(plan: "monthly" | "yearly") {
+    setPageNotice("");
+    setCheckoutLoading(plan);
+
     if (!supabase) {
       setAccess(true);
       setSubscriptionStatus("demo");
+      setPageNotice("Demo activada. Para pago real faltan Supabase y Stripe configurados en Vercel.");
+      setCheckoutLoading(null);
       return;
     }
 
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
-    if (!token) {
-      setAuthMessage("Inicia sesion antes de contratar la membresia.");
-      return;
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) {
+        const message = "Primero inicia sesion con tu email. Despues podras contratar la membresia.";
+        setAuthMessage(message);
+        setPageNotice(message);
+        document.querySelector("#asistente")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ plan }),
+      });
+
+      const checkout = await response.json();
+      if (checkout.url) {
+        window.location.href = checkout.url;
+        return;
+      }
+
+      setPageNotice(checkout.error ?? "No se pudo abrir Stripe Checkout. Revisa las variables STRIPE_* en Vercel.");
+    } catch {
+      setPageNotice("No se pudo conectar con Stripe Checkout. Revisa Vercel y vuelve a hacer redeploy.");
+    } finally {
+      setCheckoutLoading(null);
     }
-
-    const response = await fetch("/api/checkout", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ plan }),
-    });
-
-    const checkout = await response.json();
-    if (checkout.url) window.location.href = checkout.url;
-    else setAuthMessage(checkout.error ?? "No se pudo abrir el pago.");
   }
 
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
@@ -192,6 +236,12 @@ export default function Home() {
       </header>
 
       <main>
+        {pageNotice ? (
+          <div className="page-notice" role="status">
+            {pageNotice}
+          </div>
+        ) : null}
+
         <section id="inicio" className="hero">
           <div className="hero-media" aria-hidden="true">
             <img src="https://images.unsplash.com/photo-1521727857535-28d2047314ac?auto=format&fit=crop&w=1600&q=80" alt="" />
@@ -250,7 +300,7 @@ export default function Home() {
                   required={Boolean(supabase)}
                 />
                 <button className="btn btn-dark" type="submit">
-                  {supabase ? "Enviar enlace" : "Activar demo"}
+                  {authLoading ? "Enviando..." : supabase ? "Enviar enlace" : "Activar demo"}
                 </button>
                 {authMessage ? <small>{authMessage}</small> : null}
               </form>
@@ -365,7 +415,7 @@ export default function Home() {
                 <li>Historial de progreso</li>
               </ul>
               <button className="btn btn-secondary" type="button" onClick={() => startCheckout("monthly")}>
-                Contratar mensual
+                {checkoutLoading === "monthly" ? "Abriendo pago..." : "Contratar mensual"}
               </button>
             </article>
             <article className="price-card featured">
@@ -378,7 +428,7 @@ export default function Home() {
                 <li>Modo animo y seguimiento</li>
               </ul>
               <button className="btn btn-primary" type="button" onClick={() => startCheckout("yearly")}>
-                Contratar anual
+                {checkoutLoading === "yearly" ? "Abriendo pago..." : "Contratar anual"}
               </button>
             </article>
             <article className="price-card">
