@@ -500,21 +500,6 @@ export default function Home() {
           </section>
         ) : null}
 
-        <section className="status-band" aria-label="Resumen de funciones">
-          <article>
-            <span>Dudas</span>
-            <p>Explicaciones claras para estudiar sin atascarte.</p>
-          </article>
-          <article>
-            <span>Tests</span>
-            <p>Preguntas por bloque y entrenamiento tipo examen.</p>
-          </article>
-          <article>
-            <span>Animo</span>
-            <p>Un apoyo constante para sostener la rutina.</p>
-          </article>
-        </section>
-
         {!paidAccess ? (
           <section className="conversion-section">
             <div className="section-heading compact">
@@ -586,19 +571,8 @@ export default function Home() {
               </div>
 
               <div className="focus-card">
-                <p className="panel-label">Modo de ayuda</p>
-                <div className="mode-list" role="listbox" aria-label="Modo del asistente">
-                  {modes.map((item) => (
-                    <button
-                      className={`mode ${mode === item.id ? "active" : ""}`}
-                      key={item.id}
-                      onClick={() => changeMode(item.id)}
-                      type="button"
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
+                <p className="panel-label">Acompanamiento</p>
+                <p className="side-note">Pregunta lo que necesites y OpoCompi adaptara la respuesta a tu oposicion.</p>
               </div>
             </aside>
 
@@ -624,31 +598,6 @@ export default function Home() {
                 </button>
               </form>
             </section>
-          </div>
-        </section>
-
-        <section id="test" className="test-section">
-          <div className="section-heading compact">
-            <p className="eyebrow">Entrenamiento</p>
-            <h2>{paidAccess ? "Practica tests como en examen" : "Tests bloqueados para miembros"}</h2>
-            <p>
-              {paidAccess
-                ? "Elige bloque, responde sin ver la solucion y pulsa resolver para corregir errores."
-                : "La zona de tests queda dentro de la membresia. Puedes probar el chat gratis antes de desbloquearlos."}
-            </p>
-          </div>
-          <div className="test-entry">
-            <div>
-              <strong>{paidAccess ? "Membresia activa" : "Solo miembros"}</strong>
-              <p>
-                {paidAccess
-                  ? "Tienes acceso completo a la zona de practica. Vamos a por esos fallos antes del examen."
-                  : "Prueba el chat gratis y desbloquea la zona de tests con la membresia."}
-              </p>
-            </div>
-            <a className="btn btn-primary" href={paidAccess ? "/tests" : "#membresia"}>
-              {paidAccess ? "Ir a practicar tests" : "Desbloquear tests"}
-            </a>
           </div>
         </section>
 

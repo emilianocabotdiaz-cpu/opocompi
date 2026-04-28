@@ -9,6 +9,7 @@
   --police-blue: #0b3b82;
   --police-blue-soft: #eaf2ff;
   --police-yellow: #ffd447;
+  --police-red: #c6192e;
   --gold: #737373;
   --green: #188064;
   --red: #b43b4a;
@@ -171,7 +172,7 @@ select {
 }
 
 .hero {
-  order: 9;
+  order: 1;
   position: relative;
   min-height: 620px;
   display: grid;
@@ -255,8 +256,8 @@ select {
 }
 
 .status-band {
-  order: 6;
-  display: grid;
+  display: none;
+  order: 0;
   grid-template-columns: repeat(3, 1fr);
   gap: 1px;
   width: min(1080px, calc(100% - 36px));
@@ -310,15 +311,15 @@ select {
 }
 
 .workspace {
-  order: 3;
+  order: 4;
 }
 
 .test-section {
-  order: 2;
+  order: 0;
 }
 
 .pricing {
-  order: 7;
+  order: 6;
 }
 
 .conversion-section {
@@ -326,11 +327,11 @@ select {
 }
 
 .how-section {
-  order: 4;
+  order: 3;
 }
 
 .auth-section {
-  order: 8;
+  order: 7;
 }
 
 .section-heading {
@@ -357,7 +358,7 @@ select {
   width: 42px;
   height: 3px;
   margin-top: 16px;
-  background: linear-gradient(90deg, var(--police-blue), var(--police-yellow));
+  background: linear-gradient(90deg, var(--police-blue), var(--police-yellow) 55%, var(--police-red));
   border-radius: 999px;
 }
 
@@ -523,7 +524,7 @@ select {
 }
 
 .cta-band {
-  order: 1;
+  order: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -540,7 +541,7 @@ select {
   content: "";
   flex: 0 0 6px;
   align-self: stretch;
-  background: linear-gradient(180deg, var(--police-blue), var(--police-yellow));
+  background: linear-gradient(180deg, var(--police-blue), var(--police-yellow) 55%, var(--police-red));
   border-radius: 999px;
 }
 
@@ -637,6 +638,13 @@ select {
 .login-card small {
   color: var(--muted);
   line-height: 1.4;
+}
+
+.side-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .mode-list {
@@ -938,7 +946,7 @@ select {
 }
 
 .price-card.featured {
-  background: linear-gradient(135deg, #071a39, var(--police-blue));
+  background: linear-gradient(135deg, #071a39, var(--police-blue) 58%, var(--police-red));
   color: var(--white);
   border-color: var(--police-blue);
   box-shadow: none;
