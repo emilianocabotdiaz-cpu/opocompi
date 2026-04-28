@@ -656,7 +656,7 @@ export default function Home() {
           <section className="cta-band">
             <div>
               <p className="eyebrow">Empieza hoy</p>
-              <h2>Tu oposicion no se prepara sola. Pero no tienes por que prepararla solo.</h2>
+              <h2>Tu oposicion no se prepara sola y nosotros te vamos a acompanar.</h2>
             </div>
             <a className="btn btn-primary" href="#membresia">Desbloquear OpoCompi</a>
           </section>
