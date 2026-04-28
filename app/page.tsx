@@ -363,10 +363,10 @@ export default function Home() {
           <span>OpoCompi</span>
         </a>
         <nav className="nav" aria-label="Navegacion principal">
-          <a href="#asistente">Probar chat</a>
           {!userEmail ? <a href="#login">Login</a> : null}
-          <a href="/tests">Tests</a>
           {!paidAccess ? <a href="#membresia">Precios</a> : null}
+          <a href="#asistente">Probar chat</a>
+          <a href="/tests">Tests</a>
         </nav>
         <div className="topbar-actions">
           {userEmail ? <span className="session-pill">{userEmail}</span> : null}
@@ -397,25 +397,12 @@ export default function Home() {
               El primer asistente para opositores de policía basado en IA generativa propia y totalmente enfocada a Policía Nacional.
             </p>
             <div className="hero-actions">
-              <a className="btn btn-primary" href="#asistente">{paidAccess ? "Ir al chat" : "Probar 3 mensajes"}</a>
-              {!paidAccess ? <a className="btn btn-secondary" href="#membresia">Ver precios</a> : null}
+              <a className="btn btn-primary" href={paidAccess ? "#asistente" : "#login"}>
+                {paidAccess ? "Ir al chat" : "Entrar o crear cuenta"}
+              </a>
+              {!paidAccess ? <a className="btn btn-secondary" href="#asistente">Probar chat</a> : null}
             </div>
           </div>
-        </section>
-
-        <section className="status-band" aria-label="Resumen de funciones">
-          <article>
-            <span>Dudas</span>
-            <p>Explicaciones claras para estudiar sin atascarte.</p>
-          </article>
-          <article>
-            <span>Tests</span>
-            <p>Preguntas por bloque y entrenamiento tipo examen.</p>
-          </article>
-          <article>
-            <span>Animo</span>
-            <p>Un apoyo constante para sostener la rutina.</p>
-          </article>
         </section>
 
         {!paidAccess ? (
@@ -460,6 +447,73 @@ export default function Home() {
             </div>
           </section>
         ) : null}
+
+        {!paidAccess ? (
+          <section id="membresia" className="pricing">
+            <div className="section-heading compact">
+              <p className="eyebrow">Membresia</p>
+              <h2>Acceso completo al chat</h2>
+              <p>Inicia sesion, elige plan y paga con Stripe. Al volver del pago, el chat y los tests quedan vinculados a tu cuenta.</p>
+            </div>
+            <div className="purchase-form">
+              {userEmail ? (
+                <p className="purchase-session">Vas a contratar con la cuenta <strong>{userEmail}</strong>.</p>
+              ) : (
+                <label>
+                  Email para la membresia
+                  <input
+                    type="email"
+                    value={checkoutEmail}
+                    onChange={(event) => setCheckoutEmail(event.target.value)}
+                    placeholder="tu@email.com"
+                  />
+                </label>
+              )}
+            </div>
+            <div className="pricing-grid two">
+              <article className="price-card">
+                <h3>Mensual</h3>
+                <p className="price">9,90 EUR<span>/mes</span></p>
+                <ul>
+                  <li>Chat IA privado</li>
+                  <li>Tests por bloque</li>
+                  <li>Acompanamiento motivacional</li>
+                </ul>
+                <button className="btn btn-secondary" type="button" onClick={() => startCheckout("monthly")}>
+                  {checkoutLoading === "monthly" ? "Abriendo pago..." : "Contratar mensual"}
+                </button>
+              </article>
+              <article className="price-card featured">
+                <div className="tag">Ahorro anual</div>
+                <h3>Oposicion completa</h3>
+                <p className="price">90,90 EUR<span>/ano</span></p>
+                <ul>
+                  <li>Todo lo del plan mensual</li>
+                  <li>Mejor precio para preparacion completa</li>
+                  <li>Acceso continuado al chat</li>
+                </ul>
+                <button className="btn btn-primary" type="button" onClick={() => startCheckout("yearly")}>
+                  {checkoutLoading === "yearly" ? "Abriendo pago..." : "Contratar anual"}
+                </button>
+              </article>
+            </div>
+          </section>
+        ) : null}
+
+        <section className="status-band" aria-label="Resumen de funciones">
+          <article>
+            <span>Dudas</span>
+            <p>Explicaciones claras para estudiar sin atascarte.</p>
+          </article>
+          <article>
+            <span>Tests</span>
+            <p>Preguntas por bloque y entrenamiento tipo examen.</p>
+          </article>
+          <article>
+            <span>Animo</span>
+            <p>Un apoyo constante para sostener la rutina.</p>
+          </article>
+        </section>
 
         {!paidAccess ? (
           <section className="conversion-section">
@@ -576,9 +630,11 @@ export default function Home() {
         <section id="test" className="test-section">
           <div className="section-heading compact">
             <p className="eyebrow">Entrenamiento</p>
-            <h2>Practica tests como en examen</h2>
+            <h2>{paidAccess ? "Practica tests como en examen" : "Tests bloqueados para miembros"}</h2>
             <p>
-              La zona de tests queda dentro de la membresia. Elige bloque, responde sin ver la solucion y pulsa resolver para corregir errores.
+              {paidAccess
+                ? "Elige bloque, responde sin ver la solucion y pulsa resolver para corregir errores."
+                : "La zona de tests queda dentro de la membresia. Puedes probar el chat gratis antes de desbloquearlos."}
             </p>
           </div>
           <div className="test-entry">
@@ -603,58 +659,6 @@ export default function Home() {
               <h2>Tu oposicion no se prepara sola. Pero no tienes por que prepararla solo.</h2>
             </div>
             <a className="btn btn-primary" href="#membresia">Desbloquear OpoCompi</a>
-          </section>
-        ) : null}
-
-        {!paidAccess ? (
-          <section id="membresia" className="pricing">
-            <div className="section-heading compact">
-              <p className="eyebrow">Membresia</p>
-              <h2>Acceso completo al chat</h2>
-              <p>Introduce tu email, elige un plan y paga con Stripe. Al volver del pago, el chat quedara desbloqueado.</p>
-            </div>
-            <div className="purchase-form">
-              {userEmail ? (
-                <p className="purchase-session">Vas a contratar con la cuenta <strong>{userEmail}</strong>.</p>
-              ) : (
-                <label>
-                  Email para la membresia
-                  <input
-                    type="email"
-                    value={checkoutEmail}
-                    onChange={(event) => setCheckoutEmail(event.target.value)}
-                    placeholder="tu@email.com"
-                  />
-                </label>
-              )}
-            </div>
-            <div className="pricing-grid two">
-              <article className="price-card">
-                <h3>Mensual</h3>
-                <p className="price">9,90 EUR<span>/mes</span></p>
-                <ul>
-                  <li>Chat IA privado</li>
-                  <li>Tests por bloque</li>
-                  <li>Acompanamiento motivacional</li>
-                </ul>
-                <button className="btn btn-secondary" type="button" onClick={() => startCheckout("monthly")}>
-                  {checkoutLoading === "monthly" ? "Abriendo pago..." : "Contratar mensual"}
-                </button>
-              </article>
-              <article className="price-card featured">
-                <div className="tag">Ahorro anual</div>
-                <h3>Oposicion completa</h3>
-                <p className="price">90,90 EUR<span>/ano</span></p>
-                <ul>
-                  <li>Todo lo del plan mensual</li>
-                  <li>Mejor precio para preparacion completa</li>
-                  <li>Acceso continuado al chat</li>
-                </ul>
-                <button className="btn btn-primary" type="button" onClick={() => startCheckout("yearly")}>
-                  {checkoutLoading === "yearly" ? "Abriendo pago..." : "Contratar anual"}
-                </button>
-              </article>
-            </div>
           </section>
         ) : null}
       </main>
