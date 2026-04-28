@@ -118,20 +118,22 @@ export default function Home() {
         return;
       }
 
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: window.location.origin,
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({ email }),
       });
+      const result = await response.json();
 
-      const message = error
-        ? `Error de Supabase: ${error.message}`
-        : "Te hemos enviado un enlace de acceso al email. Revisa tambien spam o promociones.";
+      const message = response.ok
+        ? result.message
+        : result.error ?? "No se pudo enviar el enlace de acceso.";
       setAuthMessage(message);
       setPageNotice(message);
     } catch {
-      const message = "No se pudo conectar con Supabase. Revisa las variables de entorno y redeploy en Vercel.";
+      const message = "No se pudo llamar a /api/login. Revisa el ultimo despliegue de Vercel.";
       setAuthMessage(message);
       setPageNotice(message);
     } finally {
