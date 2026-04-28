@@ -80,6 +80,7 @@ export default function Home() {
   ]);
 
   useEffect(() => {
+    const supabaseClient = supabase;
     const params = new URLSearchParams(window.location.search);
     const checkoutSuccess = params.get("checkout") === "success";
     const checkoutCancelled = params.get("checkout") === "cancelled";
@@ -133,11 +134,11 @@ export default function Home() {
     }
 
     async function loadSession() {
-      if (!supabase || !isSupabaseConfigured) return;
+      if (!supabaseClient || !isSupabaseConfigured) return;
 
       const {
         data: { session },
-      } = await supabase.auth.getSession();
+      } = await supabaseClient.auth.getSession();
 
       if (!session) {
         setUserEmail("");
@@ -174,7 +175,9 @@ export default function Home() {
 
     loadSession();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(() => {
+    if (!supabaseClient || !isSupabaseConfigured) return;
+
+    const { data: authListener } = supabaseClient.auth.onAuthStateChange(() => {
       loadSession();
     });
 

@@ -12,6 +12,8 @@ export default function TestsPage() {
   const [resolved, setResolved] = useState(false);
 
   useEffect(() => {
+    const supabaseClient = supabase;
+
     async function checkAccess() {
       if (!isSupabaseConfigured && localStorage.getItem("opocompi-paid-access") === "true") {
         setPaidAccess(true);
@@ -19,14 +21,14 @@ export default function TestsPage() {
         return;
       }
 
-      if (!supabase || !isSupabaseConfigured) {
+      if (!supabaseClient || !isSupabaseConfigured) {
         setCheckingAccess(false);
         return;
       }
 
       const {
         data: { session },
-      } = await supabase.auth.getSession();
+      } = await supabaseClient.auth.getSession();
 
       if (!session) {
         setCheckingAccess(false);
