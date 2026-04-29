@@ -16,6 +16,11 @@ type Message = {
   text: string;
 };
 
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+};
+
 function renderMessageText(text: string) {
   const blocks = text.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean);
 
@@ -71,6 +76,9 @@ export default function Home() {
   const [loginEmail, setLoginEmail] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [installNotice, setInstallNotice] = useState("");
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -183,6 +191,38 @@ export default function Home() {
 
     return () => {
       authListener?.subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {
+        setInstallNotice("La instalacion como app no esta disponible en este navegador.");
+      });
+    }
+
+    const standalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      ("standalone" in navigator && Boolean((navigator as Navigator & { standalone?: boolean }).standalone));
+    setIsStandalone(standalone);
+
+    function handleBeforeInstallPrompt(event: Event) {
+      event.preventDefault();
+      setInstallPrompt(event as BeforeInstallPromptEvent);
+    }
+
+    function handleAppInstalled() {
+      setIsStandalone(true);
+      setInstallPrompt(null);
+      setInstallNotice("OpoCompi ya esta instalada en tu movil.");
+    }
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
     };
   }, []);
 
@@ -314,6 +354,27 @@ export default function Home() {
     setPageNotice("Sesion cerrada. Puedes volver a entrar cuando quieras, compi.");
   }
 
+  async function installApp() {
+    if (isStandalone) {
+      setInstallNotice("OpoCompi ya esta funcionando como app.");
+      return;
+    }
+
+    if (installPrompt) {
+      await installPrompt.prompt();
+      const choice = await installPrompt.userChoice;
+      setInstallPrompt(null);
+      setInstallNotice(
+        choice.outcome === "accepted"
+          ? "Listo. OpoCompi se esta instalando en tu movil."
+          : "Sin problema. Puedes instalarla mas tarde desde el navegador."
+      );
+      return;
+    }
+
+    setInstallNotice("En iPhone: comparte esta pagina y pulsa 'Anadir a pantalla de inicio'. En Android: usa el menu del navegador e instala la app.");
+  }
+
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const text = prompt.trim();
@@ -369,6 +430,11 @@ export default function Home() {
           <a href="/tests">Tests</a>
         </nav>
         <div className="topbar-actions">
+          {!isStandalone ? (
+            <button className="btn btn-secondary install-topbar" type="button" onClick={installApp}>
+              Instalar
+            </button>
+          ) : null}
           {userEmail ? <span className="session-pill">{userEmail}</span> : null}
           {userEmail || paidAccess ? (
             <button className="btn btn-secondary" type="button" onClick={logout}>Salir</button>
@@ -606,8 +672,17 @@ export default function Home() {
             <div>
               <p className="eyebrow">Empieza hoy</p>
               <h2>Tu oposicion no se prepara sola y nosotros te vamos a acompanar.</h2>
+              <p className="install-copy">
+                Instala OpoCompi en tu movil y llevalo siempre en la pantalla de inicio.
+              </p>
+              {installNotice ? <p className="install-notice">{installNotice}</p> : null}
             </div>
-            <a className="btn btn-primary" href="#membresia">Desbloquear OpoCompi</a>
+            <div className="cta-actions">
+              <button className="btn btn-primary" type="button" onClick={installApp}>
+                {isStandalone ? "App instalada" : "Instalar app"}
+              </button>
+              <a className="btn btn-secondary" href="#membresia">Ver membresia</a>
+            </div>
           </section>
         ) : null}
       </main>

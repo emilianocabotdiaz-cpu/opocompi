@@ -557,11 +557,33 @@ select {
   margin-top: 18px;
 }
 
+.cta-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
 .cta-band .btn-primary {
   flex: 0 0 auto;
   background: var(--police-blue);
   color: var(--white);
   box-shadow: none;
+}
+
+.install-copy,
+.install-notice {
+  max-width: 620px;
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.install-notice {
+  color: var(--police-blue);
+  font-weight: 650;
 }
 
 .app-shell {
