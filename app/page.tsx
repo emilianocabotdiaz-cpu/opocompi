@@ -435,6 +435,7 @@ export default function Home() {
         <nav className="nav" aria-label="Navegacion principal">
           {!userEmail ? <a href="#login">Login</a> : null}
           {!paidAccess ? <a href="#membresia">Precios</a> : null}
+          <a href="/app">Abrir APP</a>
           <a href="/actualidad">Actualidad</a>
           <a href="#asistente">Probar chat</a>
           <a href="/tests">Tests</a>
