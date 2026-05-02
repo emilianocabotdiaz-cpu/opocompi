@@ -357,6 +357,7 @@ export default function Home() {
   async function installApp() {
     if (isStandalone) {
       setInstallNotice("OpoCompi ya esta funcionando como app.");
+      setPageNotice("OpoCompi ya esta funcionando como app.");
       return;
     }
 
@@ -369,10 +370,18 @@ export default function Home() {
           ? "Listo. OpoCompi se esta instalando en tu movil."
           : "Sin problema. Puedes instalarla mas tarde desde el navegador."
       );
+      setPageNotice(
+        choice.outcome === "accepted"
+          ? "Listo. OpoCompi se esta instalando en tu movil."
+          : "Sin problema. Puedes instalarla mas tarde desde el navegador."
+      );
       return;
     }
 
-    setInstallNotice("En iPhone: comparte esta pagina y pulsa 'Anadir a pantalla de inicio'. En Android: usa el menu del navegador e instala la app.");
+    const manualInstallMessage =
+      "En iPhone: pulsa el boton Compartir de Safari y despues 'Anadir a pantalla de inicio'. En Android: abre el menu del navegador y pulsa instalar app.";
+    setInstallNotice(manualInstallMessage);
+    setPageNotice(manualInstallMessage);
   }
 
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
@@ -432,7 +441,7 @@ export default function Home() {
         <div className="topbar-actions">
           {!isStandalone ? (
             <button className="btn btn-secondary install-topbar" type="button" onClick={installApp}>
-              Instalar
+              Instalar APP
             </button>
           ) : null}
           {userEmail ? <span className="session-pill">{userEmail}</span> : null}
@@ -619,7 +628,7 @@ export default function Home() {
         <section id="asistente" className="workspace">
           <div className="section-heading">
             <p className="eyebrow">{paidAccess ? "Zona de miembros" : "Prueba gratuita"}</p>
-            <h2>{paidAccess ? "Tu chat privado de oposicion" : "Chat de acompanamiento"}</h2>
+            <h2>{paidAccess ? "Tu chat privado de oposicion" : "Habla con tu nuevo companero"}</h2>
             <p>
               {paidAccess
                 ? "Dime que tema llevas entre manos y avanzamos juntos, compi."
@@ -679,7 +688,7 @@ export default function Home() {
             </div>
             <div className="cta-actions">
               <button className="btn btn-primary" type="button" onClick={installApp}>
-                {isStandalone ? "App instalada" : "Instalar app"}
+                {isStandalone ? "APP instalada" : "Instalar APP"}
               </button>
               <a className="btn btn-secondary" href="#membresia">Ver membresia</a>
             </div>
