@@ -37,6 +37,13 @@
       "description": "Abrir la zona de tests",
       "url": "/tests",
       "icons": [{ "src": "/brand/opocompi-logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Ver actualidad",
+      "short_name": "Actualidad",
+      "description": "Noticias oficiales de la oposicion",
+      "url": "/actualidad",
+      "icons": [{ "src": "/brand/opocompi-logo.png", "sizes": "192x192" }]
     }
   ]
 }
