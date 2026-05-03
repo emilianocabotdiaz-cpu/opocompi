@@ -1,4 +1,4 @@
-import { getLatestMediaNews, getLatestOfficialNews, officialNewsSources } from "@/lib/official-news";
+import { getLatestMediaNews } from "@/lib/official-news";
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("es-ES", {
@@ -11,10 +11,8 @@ function formatDate(value: string) {
 export const revalidate = 3600;
 
 export default async function ActualidadPage() {
-  const [officialItems, mediaItems] = await Promise.all([
-    getLatestOfficialNews(),
-    getLatestMediaNews(),
-  ]);
+  const mediaItems = await getLatestMediaNews();
+  const [featuredItem, ...secondaryItems] = mediaItems;
 
   return (
     <main className="news-page">
@@ -25,58 +23,76 @@ export default async function ActualidadPage() {
           </span>
           <span>OpoCompi</span>
         </a>
-        <a className="btn btn-secondary" href="/">Volver al chat</a>
+        <a className="btn btn-secondary" href="/">Volver</a>
       </header>
 
       <section className="news-hero">
-        <p className="eyebrow">Actualidad oficial</p>
-        <h1>Noticias de la oposicion a Policia Nacional</h1>
+        <p className="eyebrow">Actualidad para opositores</p>
+        <h1>Noticias sobre oposiciones a Policia Nacional</h1>
         <p>
-          Seguimiento automatico de BOE, Policia Nacional, Ministerio del Interior y medios de comunicacion. Las fuentes oficiales van separadas de las noticias divulgativas.
+          Una seleccion automatica de noticias publicadas en medios de comunicacion. Sirven para entender contexto, cambios y novedades de forma mas didactica.
         </p>
       </section>
 
-      <section className="news-section-heading">
-        <p className="eyebrow">Primero lo oficial</p>
-        <h2>BOE, Policia Nacional e Interior</h2>
-      </section>
-
-      <section className="news-grid" aria-label="Noticias oficiales">
-        {officialItems.length > 0 ? officialItems.map((item) => (
-          <article className="news-card" key={item.id}>
+      {featuredItem ? (
+        <section className="editorial-news-grid" aria-label="Noticias de medios">
+          <article className="news-card media-news-card featured-news-card">
+            {featuredItem.imageUrl ? <img src={featuredItem.imageUrl} alt="" /> : null}
             <div className="news-meta">
-              <span>{item.source}</span>
-              <span>{item.category}</span>
+              <span>{featuredItem.publisher ?? featuredItem.source}</span>
+              <span>{featuredItem.category}</span>
             </div>
-            <h2>{item.title}</h2>
-            <p>{item.summary}</p>
+            <h2>{featuredItem.title}</h2>
+            <p>{featuredItem.summary}</p>
             <div className="news-footer">
-              <time dateTime={item.publishedAt}>{formatDate(item.publishedAt)}</time>
-              <a href={item.url} target="_blank" rel="noreferrer">
-                Ver fuente oficial
+              <time dateTime={featuredItem.publishedAt}>{formatDate(featuredItem.publishedAt)}</time>
+              <a href={featuredItem.url} target="_blank" rel="noreferrer">
+                Leer en el medio
               </a>
             </div>
           </article>
-        )) : (
+
+          <div className="secondary-news-list">
+            {secondaryItems.slice(0, 4).map((item) => (
+              <article className="news-card media-news-card compact-news-card" key={item.id}>
+                {item.imageUrl ? <img src={item.imageUrl} alt="" /> : null}
+                <div className="news-meta">
+                  <span>{item.publisher ?? item.source}</span>
+                </div>
+                <h2>{item.title}</h2>
+                <div className="news-footer">
+                  <time dateTime={item.publishedAt}>{formatDate(item.publishedAt)}</time>
+                  <a href={item.url} target="_blank" rel="noreferrer">
+                    Leer
+                  </a>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <section className="news-grid media-news-grid" aria-label="Noticias de medios">
           <article className="news-card news-empty">
             <div className="news-meta">
-              <span>Sin novedades filtradas</span>
-              <span>Fuentes oficiales</span>
+              <span>Sin noticias de medios</span>
+              <span>Google News</span>
             </div>
-            <h2>No hay publicaciones nuevas detectadas para Policia Nacional.</h2>
-            <p>OpoCompi seguira revisando automaticamente las fuentes oficiales. Tambien puedes abrirlas directamente.</p>
+            <h2>No hay noticias recientes detectadas en medios.</h2>
+            <p>OpoCompi seguira revisando automaticamente y mostrara las noticias cuando aparezcan.</p>
           </article>
-        )}
-      </section>
+        </section>
+      )}
 
-      <section className="news-section-heading">
-        <p className="eyebrow">Mas didactico</p>
-        <h2>Medios de comunicacion</h2>
-        <p>Noticias explicadas por medios. Sirven para contexto, pero ante dudas manda siempre la fuente oficial.</p>
-      </section>
+      {secondaryItems.length > 4 ? (
+        <section className="news-section-heading">
+          <p className="eyebrow">Mas noticias</p>
+          <h2>Ultimas publicaciones</h2>
+        </section>
+      ) : null}
 
-      <section className="news-grid media-news-grid" aria-label="Noticias de medios">
-        {mediaItems.length > 0 ? mediaItems.map((item) => (
+      {secondaryItems.length > 4 ? (
+        <section className="news-grid media-news-grid" aria-label="Mas noticias de medios">
+          {secondaryItems.slice(4).map((item) => (
           <article className="news-card media-news-card" key={item.id}>
             {item.imageUrl ? <img src={item.imageUrl} alt="" /> : null}
             <div className="news-meta">
@@ -92,28 +108,9 @@ export default async function ActualidadPage() {
               </a>
             </div>
           </article>
-        )) : (
-          <article className="news-card news-empty">
-            <div className="news-meta">
-              <span>Sin noticias de medios</span>
-              <span>Google News</span>
-            </div>
-            <h2>No hay noticias recientes detectadas en medios.</h2>
-            <p>OpoCompi seguira revisando automaticamente y mostrara las noticias cuando aparezcan.</p>
-          </article>
-        )}
-      </section>
-
-      <section className="news-sources" aria-label="Fuentes monitorizadas">
-        <h2>Fuentes monitorizadas</h2>
-        <div>
-          {officialNewsSources.map((source) => (
-            <a href={source.url} key={source.url} target="_blank" rel="noreferrer">
-              {source.name}
-            </a>
           ))}
-        </div>
-      </section>
+        </section>
+      ) : null}
     </main>
   );
 }

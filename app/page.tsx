@@ -77,6 +77,7 @@ export default function Home() {
   const [userEmail, setUserEmail] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [loginCooldown, setLoginCooldown] = useState(0);
+  const [showLoginPanel, setShowLoginPanel] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
   const [installNotice, setInstallNotice] = useState("");
@@ -259,13 +260,13 @@ export default function Home() {
 
     if (isSupabaseConfigured && !userEmail) {
       setPageNotice("Primero inicia sesion. Asi la membresia queda guardada en tu cuenta.");
-      document.querySelector("#login")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setShowLoginPanel(true);
       return;
     }
 
     if (!userEmail && !checkoutEmail.trim()) {
       setPageNotice("Escribe tu email para contratar la membresia.");
-      document.querySelector("#login")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setShowLoginPanel(true);
       return;
     }
 
@@ -323,6 +324,7 @@ export default function Home() {
       setPageNotice(data.message ?? data.error ?? "Revisa tu email para entrar.");
       if (response.ok) {
         setLoginCooldown(60);
+        setShowLoginPanel(false);
       }
     } catch {
       setPageNotice("No pude enviar el enlace de acceso. Revisa Supabase y vuelve a intentarlo.");
@@ -452,7 +454,6 @@ export default function Home() {
           <span>OpoCompi</span>
         </a>
         <nav className="nav" aria-label="Navegacion principal">
-          {!userEmail ? <a href="#login">Login</a> : null}
           {!paidAccess ? <a href="#membresia">Precios</a> : null}
           <a href="/app">Abrir APP</a>
           <a href="/actualidad">Actualidad</a>
@@ -469,9 +470,35 @@ export default function Home() {
           {userEmail || paidAccess ? (
             <button className="btn btn-secondary" type="button" onClick={logout}>Salir</button>
           ) : (
-            <a className="btn btn-primary" href="#login">Entrar</a>
+            <button className="btn btn-secondary login-trigger" type="button" onClick={() => setShowLoginPanel((current) => !current)}>
+              Iniciar sesion
+            </button>
           )}
+          {!paidAccess ? <a className="btn btn-primary" href="#asistente">Probar gratis</a> : null}
         </div>
+
+        {showLoginPanel && !userEmail ? (
+          <div className="login-popover" role="dialog" aria-label="Iniciar sesion">
+            <form className="auth-form" onSubmit={loginWithEmail}>
+              <label>
+                Email
+                <input
+                  type="email"
+                  value={loginEmail}
+                  onChange={(event) => setLoginEmail(event.target.value)}
+                  placeholder="tu@email.com"
+                />
+              </label>
+              <button className="btn btn-primary" type="submit" disabled={authLoading || loginCooldown > 0}>
+                {authLoading ? "Enviando..." : loginCooldown > 0 ? `Reintentar en ${loginCooldown}s` : "Enviar enlace"}
+              </button>
+            </form>
+            <div className="auth-divider"><span>o</span></div>
+            <button className="btn btn-secondary google-btn" type="button" onClick={loginWithGoogle} disabled={authLoading}>
+              Entrar con Google
+            </button>
+          </div>
+        ) : null}
       </header>
 
       <main>
@@ -493,56 +520,19 @@ export default function Home() {
               El primer asistente para opositores de policía basado en IA generativa propia y totalmente enfocada a Policía Nacional.
             </p>
             <div className="hero-actions">
-              <a className="btn btn-primary" href={paidAccess ? "#asistente" : "#login"}>
-                {paidAccess ? "Ir al chat" : "Entrar o crear cuenta"}
-              </a>
+              {paidAccess ? (
+                <a className="btn btn-primary" href="#asistente">
+                  Ir al chat
+                </a>
+              ) : (
+                <button className="btn btn-primary" type="button" onClick={() => setShowLoginPanel(true)}>
+                  Entrar o crear cuenta
+                </button>
+              )}
               {!paidAccess ? <a className="btn btn-secondary" href="#asistente">Probar chat</a> : null}
             </div>
           </div>
         </section>
-
-        {!paidAccess ? (
-          <section id="login" className="auth-section">
-            <div className="section-heading compact">
-              <p className="eyebrow">Acceso</p>
-              <h2>Entra para guardar tu membresia</h2>
-              <p>
-                Inicia sesion antes de pagar. Asi, cuando contrates, OpoCompi sabra que la membresia es tuya en cualquier dispositivo.
-              </p>
-            </div>
-            <div className="auth-card">
-              {userEmail ? (
-                <div className="logged-box">
-                  <strong>Sesion iniciada</strong>
-                  <p>{userEmail}</p>
-                  <a className="btn btn-primary" href="#membresia">Elegir membresia</a>
-                </div>
-              ) : (
-                <>
-                  <form className="auth-form" onSubmit={loginWithEmail}>
-                    <label>
-                      Email
-                      <input
-                        type="email"
-                        value={loginEmail}
-                        onChange={(event) => setLoginEmail(event.target.value)}
-                        placeholder="tu@email.com"
-                      />
-                    </label>
-                    <button className="btn btn-primary" type="submit" disabled={authLoading || loginCooldown > 0}>
-                      {authLoading ? "Enviando..." : loginCooldown > 0 ? `Reintentar en ${loginCooldown}s` : "Enviar enlace"}
-                    </button>
-                  </form>
-                  <div className="auth-divider"><span>o</span></div>
-                  <button className="btn btn-secondary google-btn" type="button" onClick={loginWithGoogle} disabled={authLoading}>
-                    Entrar con Google
-                  </button>
-                  <p className="auth-help">El enlace llega al correo. Google funcionara si lo tienes activado en Supabase.</p>
-                </>
-              )}
-            </div>
-          </section>
-        ) : null}
 
         {!paidAccess ? (
           <section id="membresia" className="pricing">
@@ -719,6 +709,11 @@ export default function Home() {
 
       <footer className="footer">
         <p>OpoCompi debe usar contenido revisado por preparadores o fuentes oficiales antes de ponerse en produccion.</p>
+        <nav aria-label="Enlaces legales">
+          <a href="/aviso-legal">Aviso legal</a>
+          <a href="/privacidad">Privacidad</a>
+          <a href="/terminos">Terminos</a>
+        </nav>
       </footer>
     </>
   );

@@ -18,6 +18,14 @@ const INTERIOR_PROCESOS_URL =
   "https://www.interior.gob.es/opencms/es/servicios-al-ciudadano/empleo-publico/procesos-selectivos/policia-nacional/";
 const MEDIA_NEWS_RSS =
   "https://news.google.com/rss/search?q=%22oposiciones%20Polic%C3%ADa%20Nacional%22%20OR%20%22oposici%C3%B3n%20Polic%C3%ADa%20Nacional%22%20OR%20%22Escala%20B%C3%A1sica%20Polic%C3%ADa%20Nacional%22&hl=es&gl=ES&ceid=ES:es";
+const MEDIA_FALLBACK_IMAGES = [
+  "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=900&q=80",
+  "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80",
+  "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=900&q=80",
+  "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=900&q=80",
+  "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=900&q=80",
+  "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=80",
+];
 
 const KEYWORDS = [
   "policia nacional",
@@ -51,6 +59,43 @@ function getTagValue(xml: string, tag: string) {
 function getAttributeValue(xml: string, tag: string, attr: string) {
   const match = xml.match(new RegExp(`<${tag}[^>]*\\s${attr}=["']([^"']+)["'][^>]*>`, "i"));
   return match ? decodeHtml(match[1]) : "";
+}
+
+function getMetaImage(html: string) {
+  const patterns = [
+    /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["'][^>]*>/i,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["'][^>]*>/i,
+    /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["'][^>]*>/i,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["'][^>]*>/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match?.[1]) return decodeHtml(match[1]);
+  }
+
+  return "";
+}
+
+async function fetchArticleImage(url: string) {
+  if (!url || !/^https?:\/\//i.test(url)) return "";
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "OpoCompi Actualidad/1.0",
+      },
+      next: { revalidate: 60 * 60 },
+    });
+
+    if (!response.ok) return "";
+
+    const html = await response.text();
+    const imageUrl = getMetaImage(html);
+    return /^https?:\/\//i.test(imageUrl) ? imageUrl : "";
+  } catch {
+    return "";
+  }
 }
 
 function normalize(value: string) {
@@ -149,7 +194,7 @@ async function fetchMediaNews(): Promise<OfficialNewsItem[]> {
     const xml = await response.text();
     const matches = xml.match(/<item[\s\S]*?<\/item>/gi) ?? [];
 
-    return matches
+    const parsedItems = matches
       .map((item) => {
         const title = getTagValue(item, "title");
         const summary = getTagValue(item, "description");
@@ -159,8 +204,7 @@ async function fetchMediaNews(): Promise<OfficialNewsItem[]> {
         const imageUrl =
           getAttributeValue(item, "media:content", "url") ||
           getAttributeValue(item, "media:thumbnail", "url") ||
-          getAttributeValue(item, "enclosure", "url") ||
-          "/brand/police-banner.jpg";
+          getAttributeValue(item, "enclosure", "url");
         const text = `${title} ${summary}`;
 
         return {
@@ -177,6 +221,16 @@ async function fetchMediaNews(): Promise<OfficialNewsItem[]> {
         };
       })
       .filter((item) => item.title && isRelevant(item.title, item.summary));
+
+    return Promise.all(
+      parsedItems.map(async (item, index) => ({
+        ...item,
+        imageUrl:
+          item.imageUrl ||
+          (await fetchArticleImage(item.url)) ||
+          MEDIA_FALLBACK_IMAGES[index % MEDIA_FALLBACK_IMAGES.length],
+      })),
+    );
   } catch {
     return [];
   }
