@@ -636,6 +636,35 @@ export default function Home() {
           </section>
         ) : null}
 
+        {!paidAccess ? (
+          <section className="examples-section" aria-labelledby="examples-title">
+            <div className="section-heading compact">
+              <p className="eyebrow">Usalo en tu estudio diario</p>
+              <h2 id="examples-title">Preguntas que puedes hacerle</h2>
+              <p>OpoCompi esta pensado para convertir una duda, un bloqueo o un repaso en una respuesta practica.</p>
+            </div>
+
+            <div className="examples-grid">
+              <article>
+                <span>Temario</span>
+                <p>Explícame la diferencia entre detención, identificación y cacheo como si fuera para examen.</p>
+              </article>
+              <article>
+                <span>Test</span>
+                <p>Hazme 10 preguntas tipo A/B/C/D sobre Constitución Española y corrige mis fallos.</p>
+              </article>
+              <article>
+                <span>Repaso</span>
+                <p>Resume este tema en puntos clave y dime qué suele caer más en preguntas tipo test.</p>
+              </article>
+              <article>
+                <span>Ánimo</span>
+                <p>Hoy estoy bloqueado con el estudio. Ayúdame a organizar una sesión corta de 45 minutos.</p>
+              </article>
+            </div>
+          </section>
+        ) : null}
+
         <section id="asistente" className="workspace">
           <div className="section-heading">
             <p className="eyebrow">{paidAccess ? "Zona de miembros" : "Prueba gratuita"}</p>
@@ -702,6 +731,35 @@ export default function Home() {
                 {isStandalone ? "APP instalada" : "Instalar APP"}
               </button>
               <a className="btn btn-secondary" href="#membresia">Ver membresia</a>
+            </div>
+          </section>
+        ) : null}
+
+        {!paidAccess ? (
+          <section className="faq-section" aria-labelledby="faq-title">
+            <div className="section-heading compact">
+              <p className="eyebrow">Antes de empezar</p>
+              <h2 id="faq-title">Preguntas frecuentes</h2>
+              <p>Lo importante, claro y sin letra pequena innecesaria.</p>
+            </div>
+
+            <div className="faq-grid">
+              <article>
+                <h3>¿OpoCompi sustituye a una academia?</h3>
+                <p>No. Es un asistente de apoyo para resolver dudas, practicar tests y mantener ritmo de estudio. Tu temario y las fuentes oficiales siguen siendo la base.</p>
+              </article>
+              <article>
+                <h3>¿Puedo probarlo antes?</h3>
+                <p>Si. Puedes usar 3 mensajes gratis para comprobar si te ayuda con una duda real, un repaso o un pequeño test.</p>
+              </article>
+              <article>
+                <h3>¿Puedo cancelar la membresia?</h3>
+                <p>Si. Desde tu cuenta podras gestionar la suscripcion, cambiar tarjeta o cancelar desde el portal seguro de Stripe.</p>
+              </article>
+              <article>
+                <h3>¿Las respuestas son siempre correctas?</h3>
+                <p>La IA puede equivocarse. OpoCompi esta pensado para estudiar mejor, pero la normativa importante debe contrastarse con BOE, convocatoria y fuentes oficiales.</p>
+              </article>
             </div>
           </section>
         ) : null}
