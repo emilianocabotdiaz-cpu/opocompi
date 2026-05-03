@@ -19,12 +19,10 @@ const INTERIOR_PROCESOS_URL =
 const MEDIA_NEWS_RSS =
   "https://news.google.com/rss/search?q=%22oposiciones%20Polic%C3%ADa%20Nacional%22%20OR%20%22oposici%C3%B3n%20Polic%C3%ADa%20Nacional%22%20OR%20%22Escala%20B%C3%A1sica%20Polic%C3%ADa%20Nacional%22&hl=es&gl=ES&ceid=ES:es";
 const MEDIA_FALLBACK_IMAGES = [
+  "/brand/police-banner.jpg",
+  "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=900&q=80",
   "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80",
   "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=80",
 ];
 
 const KEYWORDS = [
@@ -35,6 +33,17 @@ const KEYWORDS = [
   "escala ejecutiva",
   "procesos selectivos",
   "oposicion",
+];
+const EXCLUDED_MEDIA_PUBLISHERS = [
+  "adams",
+  "jurispol",
+  "depol",
+  "masterd",
+  "corporepol",
+  "innotest",
+  "academia",
+  "opositor",
+  "campus training",
 ];
 
 function decodeHtml(value: string) {
@@ -51,14 +60,44 @@ function decodeHtml(value: string) {
     .trim();
 }
 
+function decodeHtmlEntities(value: string) {
+  return value
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .trim();
+}
+
 function getTagValue(xml: string, tag: string) {
   const match = xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
   return match ? decodeHtml(match[1]) : "";
 }
 
+function getRawTagValue(xml: string, tag: string) {
+  const match = xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
+  return match ? decodeHtmlEntities(match[1]) : "";
+}
+
 function getAttributeValue(xml: string, tag: string, attr: string) {
   const match = xml.match(new RegExp(`<${tag}[^>]*\\s${attr}=["']([^"']+)["'][^>]*>`, "i"));
   return match ? decodeHtml(match[1]) : "";
+}
+
+function getFirstArticleHref(html: string) {
+  const matches = Array.from(html.matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>/gi));
+
+  for (const match of matches) {
+    const href = decodeHtml(match[1]);
+    if (/^https?:\/\//i.test(href) && !href.includes("news.google.com")) {
+      return href;
+    }
+  }
+
+  return "";
 }
 
 function getMetaImage(html: string) {
@@ -77,6 +116,17 @@ function getMetaImage(html: string) {
   return "";
 }
 
+function isGoogleNewsImage(url: string) {
+  const normalized = url.toLowerCase();
+  return (
+    normalized.includes("news.google") ||
+    normalized.includes("gstatic.com") ||
+    normalized.includes("googleusercontent.com") ||
+    normalized.includes("google.com/logos") ||
+    normalized.includes("google-news")
+  );
+}
+
 async function fetchArticleImage(url: string) {
   if (!url || !/^https?:\/\//i.test(url)) return "";
 
@@ -92,9 +142,27 @@ async function fetchArticleImage(url: string) {
 
     const html = await response.text();
     const imageUrl = getMetaImage(html);
-    return /^https?:\/\//i.test(imageUrl) ? imageUrl : "";
+    return /^https?:\/\//i.test(imageUrl) && !isGoogleNewsImage(imageUrl) ? imageUrl : "";
   } catch {
     return "";
+  }
+}
+
+async function resolveNewsUrl(url: string) {
+  if (!url || !url.includes("news.google.com")) return url;
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "OpoCompi Actualidad/1.0",
+      },
+      redirect: "follow",
+      next: { revalidate: 60 * 60 },
+    });
+
+    return response.url && !response.url.includes("news.google.com") ? response.url : url;
+  } catch {
+    return url;
   }
 }
 
@@ -108,6 +176,11 @@ function normalize(value: string) {
 function isRelevant(title: string, summary: string) {
   const text = normalize(`${title} ${summary}`);
   return KEYWORDS.some((keyword) => text.includes(normalize(keyword)));
+}
+
+function isAllowedMediaPublisher(publisher: string) {
+  const normalized = normalize(publisher);
+  return !EXCLUDED_MEDIA_PUBLISHERS.some((blocked) => normalized.includes(normalize(blocked)));
 }
 
 function inferCategory(text: string): OfficialNewsItem["category"] {
@@ -197,9 +270,11 @@ async function fetchMediaNews(): Promise<OfficialNewsItem[]> {
     const parsedItems = matches
       .map((item) => {
         const title = getTagValue(item, "title");
-        const summary = getTagValue(item, "description");
-        const link = getTagValue(item, "link");
+        const rawSummary = getRawTagValue(item, "description");
+        const summary = decodeHtml(rawSummary);
         const publisher = getTagValue(item, "source") || "Medio de comunicacion";
+        const sourceUrl = getAttributeValue(item, "source", "url");
+        const link = sourceUrl || getFirstArticleHref(rawSummary) || getTagValue(item, "link");
         const publishedAt = formatDate(getTagValue(item, "pubDate"));
         const imageUrl =
           getAttributeValue(item, "media:content", "url") ||
@@ -215,21 +290,26 @@ async function fetchMediaNews(): Promise<OfficialNewsItem[]> {
           publisher,
           category: inferCategory(text),
           url: link || MEDIA_NEWS_RSS,
-          imageUrl,
+          imageUrl: imageUrl && !isGoogleNewsImage(imageUrl) ? imageUrl : "",
           publishedAt,
           official: false,
         };
       })
-      .filter((item) => item.title && isRelevant(item.title, item.summary));
+      .filter((item) => item.title && isRelevant(item.title, item.summary) && isAllowedMediaPublisher(item.publisher));
 
     return Promise.all(
-      parsedItems.map(async (item, index) => ({
-        ...item,
-        imageUrl:
-          item.imageUrl ||
-          (await fetchArticleImage(item.url)) ||
-          MEDIA_FALLBACK_IMAGES[index % MEDIA_FALLBACK_IMAGES.length],
-      })),
+      parsedItems.map(async (item, index) => {
+        const articleUrl = await resolveNewsUrl(item.url);
+
+        return {
+          ...item,
+          url: articleUrl,
+          imageUrl:
+            item.imageUrl ||
+            (await fetchArticleImage(articleUrl)) ||
+            MEDIA_FALLBACK_IMAGES[index % MEDIA_FALLBACK_IMAGES.length],
+        };
+      }),
     );
   } catch {
     return [];
