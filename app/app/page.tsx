@@ -51,12 +51,6 @@ const paidWelcomeMessage =
 const trialWelcomeMessage =
   "Bienvenido a OpoCompi. Puedes probar 3 mensajes gratis; preguntame una duda, pideme un test o cuentame como llevas el estudio.";
 
-const quickPrompts = [
-  "Hazme un test de 10 preguntas sobre Constitucion Espanola y no me des las respuestas hasta que conteste.",
-  "Explicame este concepto de forma corta y con ejemplo policial.",
-  "Organizame una sesion de estudio de 45 minutos para hoy.",
-];
-
 function getConversationTitle(text: string) {
   const clean = text.replace(/\s+/g, " ").trim();
   return clean.length > 48 ? `${clean.slice(0, 48)}...` : clean || "Nuevo chat";
@@ -547,14 +541,6 @@ export default function OpoCompiAppPage() {
               <span>{message.role === "user" ? "Tu" : "OpoCompi"}</span>
               <div className="message-body">{renderMessageText(message.text)}</div>
             </article>
-          ))}
-        </div>
-
-        <div className="chat-quick-prompts" aria-label="Atajos del chat">
-          {quickPrompts.map((quickPrompt) => (
-            <button key={quickPrompt} type="button" onClick={() => setPrompt(quickPrompt)} disabled={busy}>
-              {quickPrompt}
-            </button>
           ))}
         </div>
 

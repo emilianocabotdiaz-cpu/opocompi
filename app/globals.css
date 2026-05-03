@@ -1708,29 +1708,6 @@ select {
   padding: 24px clamp(16px, 4vw, 34px);
 }
 
-.chat-quick-prompts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 0 clamp(16px, 4vw, 34px) 12px;
-}
-
-.chat-quick-prompts button {
-  min-height: 34px;
-  padding: 0 11px;
-  color: var(--police-blue);
-  background: var(--police-blue-soft);
-  border: 1px solid rgba(11, 59, 130, 0.18);
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.chat-quick-prompts button:hover {
-  background: #dceaff;
-}
-
 .chat-app-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
