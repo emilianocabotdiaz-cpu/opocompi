@@ -24,7 +24,21 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <body>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+                if (isStandalone && window.location.pathname === "/") {
+                  window.location.replace("/app");
+                }
+              })();
+            `,
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }

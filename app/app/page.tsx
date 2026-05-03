@@ -469,8 +469,6 @@ export default function OpoCompiAppPage() {
 
         <nav className="chat-app-nav" aria-label="Navegacion de la app">
           <a className="active" href="/app">Chat</a>
-          <a href="/actualidad">Actualidad</a>
-          <a href="/">Web</a>
         </nav>
 
         <section className="chat-history" aria-label="Historial de chats">
@@ -536,7 +534,9 @@ export default function OpoCompiAppPage() {
             <p className="eyebrow">Tu primer companero en la Policia</p>
             <h1>¿Dime en que te puedo ayudar, compi?</h1>
           </div>
-          <a className="btn btn-secondary" href="/actualidad">Actualidad</a>
+          <button className="btn btn-secondary" type="button" onClick={newChat}>
+            Nuevo chat
+          </button>
         </header>
 
         {notice ? <div className="chat-app-notice">{notice}</div> : null}
