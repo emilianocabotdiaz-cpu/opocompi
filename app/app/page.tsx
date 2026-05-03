@@ -54,6 +54,7 @@ export default function OpoCompiAppPage() {
   const [loginEmail, setLoginEmail] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
   const [loginCooldown, setLoginCooldown] = useState(0);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -202,6 +203,46 @@ export default function OpoCompiAppPage() {
     setNotice("Sesion cerrada.");
   }
 
+  async function openBillingPortal() {
+    if (!supabase) {
+      setNotice("Supabase no esta configurado para gestionar la membresia.");
+      return;
+    }
+
+    setPortalLoading(true);
+    setNotice("");
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        setNotice("Inicia sesion para gestionar tu membresia.");
+        return;
+      }
+
+      const response = await fetch("/api/billing-portal", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.url) {
+        setNotice(data.error ?? "No pude abrir la gestion de membresia.");
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch {
+      setNotice("No pude abrir la gestion de membresia.");
+    } finally {
+      setPortalLoading(false);
+    }
+  }
+
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const text = prompt.trim();
@@ -280,11 +321,15 @@ export default function OpoCompiAppPage() {
             </button>
           )}
 
-          {!paidAccess ? (
+          {paidAccess ? (
+            <button className="btn btn-primary" type="button" onClick={openBillingPortal} disabled={portalLoading}>
+              {portalLoading ? "Abriendo..." : "Gestionar membresia"}
+            </button>
+          ) : (
             <a className="btn btn-primary" href="/#membresia">
               Activar membresia
             </a>
-          ) : null}
+          )}
         </section>
       </aside>
 
