@@ -54,6 +54,7 @@ export default function OpoCompiAppPage() {
   const [loginEmail, setLoginEmail] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+  const [loginCooldown, setLoginCooldown] = useState(0);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -143,9 +144,24 @@ export default function OpoCompiAppPage() {
     localStorage.setItem("opocompi-chat-messages", JSON.stringify(messages));
   }, [messages]);
 
+  useEffect(() => {
+    if (loginCooldown <= 0) return;
+
+    const timer = window.setInterval(() => {
+      setLoginCooldown((current) => Math.max(0, current - 1));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [loginCooldown]);
+
   async function loginWithEmail(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setNotice("");
+
+    if (loginCooldown > 0) {
+      setNotice(`Espera ${loginCooldown} segundos antes de pedir otro enlace. Revisa antes tu email.`);
+      return;
+    }
 
     if (!loginEmail.trim()) {
       setNotice("Escribe tu email para enviarte el enlace de acceso.");
@@ -163,6 +179,9 @@ export default function OpoCompiAppPage() {
       });
       const data = await response.json();
       setNotice(data.message ?? data.error ?? "Revisa tu email para entrar.");
+      if (response.ok) {
+        setLoginCooldown(60);
+      }
     } catch {
       setNotice("No pude enviar el enlace de acceso.");
     } finally {
@@ -244,15 +263,15 @@ export default function OpoCompiAppPage() {
           {userEmail ? <span>{userEmail}</span> : null}
 
           {!userEmail ? (
-            <form onSubmit={loginWithEmail}>
+              <form onSubmit={loginWithEmail}>
               <input
                 type="email"
                 value={loginEmail}
                 onChange={(event) => setLoginEmail(event.target.value)}
                 placeholder="tu@email.com"
               />
-              <button className="btn btn-secondary" type="submit" disabled={authLoading}>
-                {authLoading ? "Enviando..." : "Entrar"}
+              <button className="btn btn-secondary" type="submit" disabled={authLoading || loginCooldown > 0}>
+                {authLoading ? "Enviando..." : loginCooldown > 0 ? `Reintentar en ${loginCooldown}s` : "Entrar"}
               </button>
             </form>
           ) : (

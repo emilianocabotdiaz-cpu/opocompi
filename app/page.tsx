@@ -76,6 +76,7 @@ export default function Home() {
   const [loginEmail, setLoginEmail] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+  const [loginCooldown, setLoginCooldown] = useState(0);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
   const [installNotice, setInstallNotice] = useState("");
@@ -230,6 +231,16 @@ export default function Home() {
     localStorage.setItem("opocompi-chat-messages", JSON.stringify(messages));
   }, [messages]);
 
+  useEffect(() => {
+    if (loginCooldown <= 0) return;
+
+    const timer = window.setInterval(() => {
+      setLoginCooldown((current) => Math.max(0, current - 1));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [loginCooldown]);
+
   function changeMode(nextMode: string) {
     if (nextMode === mode) return;
     setMode(nextMode);
@@ -289,6 +300,11 @@ export default function Home() {
     event.preventDefault();
     setPageNotice("");
 
+    if (loginCooldown > 0) {
+      setPageNotice(`Espera ${loginCooldown} segundos antes de pedir otro enlace. Revisa antes tu email.`);
+      return;
+    }
+
     if (!loginEmail.trim()) {
       setPageNotice("Escribe tu email para enviarte el enlace de acceso.");
       return;
@@ -305,6 +321,9 @@ export default function Home() {
       });
       const data = await response.json();
       setPageNotice(data.message ?? data.error ?? "Revisa tu email para entrar.");
+      if (response.ok) {
+        setLoginCooldown(60);
+      }
     } catch {
       setPageNotice("No pude enviar el enlace de acceso. Revisa Supabase y vuelve a intentarlo.");
     } finally {
@@ -510,8 +529,8 @@ export default function Home() {
                         placeholder="tu@email.com"
                       />
                     </label>
-                    <button className="btn btn-primary" type="submit" disabled={authLoading}>
-                      {authLoading ? "Enviando..." : "Enviar enlace"}
+                    <button className="btn btn-primary" type="submit" disabled={authLoading || loginCooldown > 0}>
+                      {authLoading ? "Enviando..." : loginCooldown > 0 ? `Reintentar en ${loginCooldown}s` : "Enviar enlace"}
                     </button>
                   </form>
                   <div className="auth-divider"><span>o</span></div>
