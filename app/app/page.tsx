@@ -9,6 +9,12 @@ type Message = {
   text: string;
 };
 
+type ConversationSummary = {
+  id: string;
+  title: string;
+  updated_at: string;
+};
+
 function renderMessageText(text: string) {
   const blocks = text.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean);
 
@@ -45,6 +51,17 @@ const paidWelcomeMessage =
 const trialWelcomeMessage =
   "Bienvenido a OpoCompi. Puedes probar 3 mensajes gratis; preguntame una duda, pideme un test o cuentame como llevas el estudio.";
 
+const quickPrompts = [
+  "Hazme un test de 10 preguntas sobre Constitucion Espanola y no me des las respuestas hasta que conteste.",
+  "Explicame este concepto de forma corta y con ejemplo policial.",
+  "Organizame una sesion de estudio de 45 minutos para hoy.",
+];
+
+function getConversationTitle(text: string) {
+  const clean = text.replace(/\s+/g, " ").trim();
+  return clean.length > 48 ? `${clean.slice(0, 48)}...` : clean || "Nuevo chat";
+}
+
 export default function OpoCompiAppPage() {
   const [notice, setNotice] = useState("");
   const [paidAccess, setPaidAccess] = useState(false);
@@ -55,7 +72,10 @@ export default function OpoCompiAppPage() {
   const [userEmail, setUserEmail] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [loginCooldown, setLoginCooldown] = useState(0);
+  const [activeConversationId, setActiveConversationId] = useState("");
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -80,7 +100,7 @@ export default function OpoCompiAppPage() {
     setPaidAccess(storedPaidAccess);
     setDemoUses(Number.isFinite(storedUses) ? storedUses : 0);
 
-    if (storedMessages) {
+    if (storedMessages && !storedPaidAccess) {
       try {
         const parsedMessages = JSON.parse(storedMessages) as Message[];
         if (Array.isArray(parsedMessages) && parsedMessages.length > 0) {
@@ -102,6 +122,7 @@ export default function OpoCompiAppPage() {
 
       if (!session) {
         setUserEmail("");
+        setConversations([]);
         return;
       }
 
@@ -119,9 +140,9 @@ export default function OpoCompiAppPage() {
         if (profile.hasAccess) {
           localStorage.setItem("opocompi-paid-access", "true");
           setPaidAccess(true);
-          if (!storedMessages) {
-            setMessages([{ id: "paid-welcome", role: "assistant", text: paidWelcomeMessage }]);
-          }
+          await loadConversations(session.access_token);
+        } else {
+          setPaidAccess(false);
         }
       } catch {
         setNotice("No pude comprobar la membresia ahora. Recarga en unos segundos.");
@@ -142,8 +163,10 @@ export default function OpoCompiAppPage() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("opocompi-chat-messages", JSON.stringify(messages));
-  }, [messages]);
+    if (!paidAccess) {
+      localStorage.setItem("opocompi-chat-messages", JSON.stringify(messages));
+    }
+  }, [messages, paidAccess]);
 
   useEffect(() => {
     if (loginCooldown <= 0) return;
@@ -154,6 +177,148 @@ export default function OpoCompiAppPage() {
 
     return () => window.clearInterval(timer);
   }, [loginCooldown]);
+
+  async function getAccessToken() {
+    if (!supabase) return "";
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    return session?.access_token ?? "";
+  }
+
+  async function loadConversations(token?: string) {
+    const accessToken = token ?? (await getAccessToken());
+    if (!accessToken) return;
+
+    setHistoryLoading(true);
+    try {
+      const response = await fetch("/api/conversations", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setNotice(data.error ?? "No pude cargar el historial.");
+        return;
+      }
+
+      const nextConversations = data.conversations ?? [];
+      setConversations(nextConversations);
+
+      if (nextConversations.length > 0 && !activeConversationId) {
+        await openConversation(nextConversations[0].id, accessToken);
+      } else if (nextConversations.length === 0 && messages[0]?.id !== "paid-welcome") {
+        setMessages([{ id: "paid-welcome", role: "assistant", text: paidWelcomeMessage }]);
+      }
+    } catch {
+      setNotice("No pude cargar el historial. Revisa que la tabla conversations exista en Supabase.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
+  async function openConversation(id: string, token?: string) {
+    const accessToken = token ?? (await getAccessToken());
+    if (!accessToken) return;
+
+    setHistoryLoading(true);
+    try {
+      const response = await fetch(`/api/conversations/${id}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setNotice(data.error ?? "No pude abrir esta conversacion.");
+        return;
+      }
+
+      setActiveConversationId(data.conversation.id);
+      setMessages(
+        Array.isArray(data.conversation.messages) && data.conversation.messages.length > 0
+          ? data.conversation.messages
+          : [{ id: "paid-welcome", role: "assistant", text: paidWelcomeMessage }],
+      );
+    } catch {
+      setNotice("No pude abrir esta conversacion.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
+  async function saveConversation(nextMessages: Message[], firstUserText: string) {
+    if (!paidAccess || !supabase || !isSupabaseConfigured) return;
+
+    const accessToken = await getAccessToken();
+    if (!accessToken) return;
+
+    const title = getConversationTitle(firstUserText);
+    const method = activeConversationId ? "PATCH" : "POST";
+    const url = activeConversationId ? `/api/conversations/${activeConversationId}` : "/api/conversations";
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          title,
+          messages: nextMessages,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setNotice(data.error ?? "No pude guardar la conversacion.");
+        return;
+      }
+
+      setActiveConversationId(data.conversation.id);
+      await loadConversations(accessToken);
+    } catch {
+      setNotice("No pude guardar la conversacion. Revisa Supabase.");
+    }
+  }
+
+  function newChat() {
+    setActiveConversationId("");
+    setMessages([{ id: "paid-welcome", role: "assistant", text: paidAccess ? paidWelcomeMessage : trialWelcomeMessage }]);
+    setPrompt("");
+    setNotice(paidAccess ? "Nuevo chat listo. Dime en que avanzamos, compi." : "");
+  }
+
+  async function deleteConversation(id: string) {
+    const accessToken = await getAccessToken();
+    if (!accessToken) return;
+
+    try {
+      const response = await fetch(`/api/conversations/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setNotice(data.error ?? "No pude borrar esta conversacion.");
+        return;
+      }
+
+      if (activeConversationId === id) {
+        newChat();
+      }
+      await loadConversations(accessToken);
+    } catch {
+      setNotice("No pude borrar esta conversacion.");
+    }
+  }
 
   async function loginWithEmail(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -199,6 +364,8 @@ export default function OpoCompiAppPage() {
     localStorage.removeItem("opocompi-chat-messages");
     setPaidAccess(false);
     setUserEmail("");
+    setConversations([]);
+    setActiveConversationId("");
     setMessages([{ id: "welcome", role: "assistant", text: trialWelcomeMessage }]);
     setNotice("Sesion cerrada.");
   }
@@ -213,11 +380,9 @@ export default function OpoCompiAppPage() {
     setNotice("");
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const accessToken = await getAccessToken();
 
-      if (!session) {
+      if (!accessToken) {
         setNotice("Inicia sesion para gestionar tu membresia.");
         return;
       }
@@ -225,7 +390,7 @@ export default function OpoCompiAppPage() {
       const response = await fetch("/api/billing-portal", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       });
       const data = await response.json();
@@ -253,7 +418,10 @@ export default function OpoCompiAppPage() {
       return;
     }
 
-    setMessages((current) => [...current, { id: crypto.randomUUID(), role: "user", text }]);
+    const userMessage: Message = { id: crypto.randomUUID(), role: "user", text };
+    const messagesWithUser = [...messages, userMessage];
+
+    setMessages(messagesWithUser);
     setPrompt("");
     setBusy(true);
 
@@ -269,13 +437,17 @@ export default function OpoCompiAppPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message: text, mode: "dudas" }),
+        body: JSON.stringify({ message: text, mode: text.toLowerCase().includes("test") ? "test" : "dudas" }),
       });
       const data = await response.json();
-      setMessages((current) => [
-        ...current,
-        { id: crypto.randomUUID(), role: "assistant", text: data.reply ?? data.error ?? "No pude responder ahora." },
-      ]);
+      const assistantMessage: Message = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        text: data.reply ?? data.error ?? "No pude responder ahora.",
+      };
+      const nextMessages = [...messagesWithUser, assistantMessage];
+      setMessages(nextMessages);
+      await saveConversation(nextMessages, text);
     } finally {
       setBusy(false);
     }
@@ -291,12 +463,37 @@ export default function OpoCompiAppPage() {
           <span>OpoCompi</span>
         </a>
 
+        <button className="btn btn-primary chat-new-button" type="button" onClick={newChat}>
+          Nuevo chat
+        </button>
+
         <nav className="chat-app-nav" aria-label="Navegacion de la app">
           <a className="active" href="/app">Chat</a>
-          <a href="/tests">Tests</a>
           <a href="/actualidad">Actualidad</a>
           <a href="/">Web</a>
         </nav>
+
+        <section className="chat-history" aria-label="Historial de chats">
+          <p className="panel-label">Historial</p>
+          {historyLoading ? <p className="history-empty">Cargando...</p> : null}
+          {!historyLoading && conversations.length === 0 ? (
+            <p className="history-empty">Tus conversaciones apareceran aqui.</p>
+          ) : null}
+          {conversations.map((conversation) => (
+            <div className="history-item" key={conversation.id}>
+              <button
+                className={conversation.id === activeConversationId ? "active" : ""}
+                type="button"
+                onClick={() => openConversation(conversation.id)}
+              >
+                {conversation.title}
+              </button>
+              <button type="button" aria-label="Borrar conversacion" onClick={() => deleteConversation(conversation.id)}>
+                Borrar
+              </button>
+            </div>
+          ))}
+        </section>
 
         <section className="chat-app-account">
           <p className="panel-label">Cuenta</p>
@@ -304,7 +501,7 @@ export default function OpoCompiAppPage() {
           {userEmail ? <span>{userEmail}</span> : null}
 
           {!userEmail ? (
-              <form onSubmit={loginWithEmail}>
+            <form onSubmit={loginWithEmail}>
               <input
                 type="email"
                 value={loginEmail}
@@ -336,8 +533,8 @@ export default function OpoCompiAppPage() {
       <section className="chat-app-main" aria-label="Chat OpoCompi">
         <header className="chat-app-header">
           <div>
-            <p className="eyebrow">Tu companero de oposicion</p>
-            <h1>Habla con OpoCompi</h1>
+            <p className="eyebrow">Tu primer companero en la Policia</p>
+            <h1>¿Dime en que te puedo ayudar, compi?</h1>
           </div>
           <a className="btn btn-secondary" href="/actualidad">Actualidad</a>
         </header>
@@ -350,6 +547,14 @@ export default function OpoCompiAppPage() {
               <span>{message.role === "user" ? "Tu" : "OpoCompi"}</span>
               <div className="message-body">{renderMessageText(message.text)}</div>
             </article>
+          ))}
+        </div>
+
+        <div className="chat-quick-prompts" aria-label="Atajos del chat">
+          {quickPrompts.map((quickPrompt) => (
+            <button key={quickPrompt} type="button" onClick={() => setPrompt(quickPrompt)} disabled={busy}>
+              {quickPrompt}
+            </button>
           ))}
         </div>
 

@@ -64,6 +64,12 @@ const modeSupportMessages: Record<string, string> = {
   plan: "Buena decisión. Vamos a organizar el estudio para que hoy salgas con trabajo hecho y cabeza tranquila.",
 };
 
+const starterPrompts = [
+  "Explícame la diferencia entre detención e identificación para examen.",
+  "Hazme 5 preguntas tipo test sobre Constitución Española.",
+  "Ayúdame a organizar una sesión de estudio de 45 minutos.",
+];
+
 export default function Home() {
   const [pageNotice, setPageNotice] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState<"monthly" | "yearly" | null>(null);
@@ -701,6 +707,13 @@ export default function Home() {
                 ))}
               </div>
               <form className="chat-form" onSubmit={sendMessage}>
+                <div className="starter-prompts" aria-label="Ejemplos rapidos">
+                  {starterPrompts.map((starter) => (
+                    <button key={starter} type="button" onClick={() => setPrompt(starter)} disabled={busy}>
+                      {starter}
+                    </button>
+                  ))}
+                </div>
                 <input
                   value={prompt}
                   onChange={(event) => setPrompt(event.target.value)}
