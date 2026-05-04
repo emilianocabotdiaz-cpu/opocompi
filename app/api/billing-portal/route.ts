@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
   const token = request.headers.get("authorization")?.replace("Bearer ", "");
   if (!token) {
-    return NextResponse.json({ error: "Inicia sesion para gestionar tu membresia." }, { status: 401 });
+    return NextResponse.json({ error: "Inicia sesión para gestionar tu suscripción." }, { status: 401 });
   }
 
   const {
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getUser(token);
 
   if (error || !user) {
-    return NextResponse.json({ error: "No pude comprobar tu sesion." }, { status: 401 });
+    return NextResponse.json({ error: "No pude comprobar tu sesión." }, { status: 401 });
   }
 
   const { data: profile } = await supabase
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
   if (!profile?.stripe_customer_id) {
     return NextResponse.json(
-      { error: "No encuentro una membresia asociada a esta cuenta." },
+      { error: "No encuentro una suscripción asociada a esta cuenta." },
       { status: 404 },
     );
   }

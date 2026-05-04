@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
   const { supabase, user } = await getUserFromRequest(request);
 
   if (!supabase || !user) {
-    return NextResponse.json({ error: "Inicia sesion para crear conversaciones." }, { status: 401 });
+    return NextResponse.json({ error: "Inicia sesión para crear conversaciones." }, { status: 401 });
   }
 
   const { title, messages } = (await request.json()) as {

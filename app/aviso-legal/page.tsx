@@ -12,7 +12,7 @@ export default function AvisoLegalPage() {
         <p className="eyebrow">Informacion legal</p>
         <h1>Aviso legal</h1>
         <p>
-          OpoCompi es una plataforma digital de apoyo al estudio para opositores a Policia Nacional.
+          OpoCompi es una plataforma digital de apoyo al estudio para opositores a Policía Nacional.
           La informacion disponible en esta web tiene finalidad formativa y no sustituye el asesoramiento
           profesional, academico o juridico individualizado.
         </p>

@@ -25,7 +25,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   const { supabase, user } = await getUserFromRequest(request);
 
   if (!supabase || !user) {
-    return NextResponse.json({ error: "Inicia sesion para abrir conversaciones." }, { status: 401 });
+    return NextResponse.json({ error: "Inicia sesión para abrir conversaciones." }, { status: 401 });
   }
 
   const { data, error } = await supabase
@@ -47,7 +47,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   const { supabase, user } = await getUserFromRequest(request);
 
   if (!supabase || !user) {
-    return NextResponse.json({ error: "Inicia sesion para guardar conversaciones." }, { status: 401 });
+    return NextResponse.json({ error: "Inicia sesión para guardar conversaciones." }, { status: 401 });
   }
 
   const { title, messages } = (await request.json()) as {
@@ -87,7 +87,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   const { supabase, user } = await getUserFromRequest(request);
 
   if (!supabase || !user) {
-    return NextResponse.json({ error: "Inicia sesion para borrar conversaciones." }, { status: 401 });
+    return NextResponse.json({ error: "Inicia sesión para borrar conversaciones." }, { status: 401 });
   }
 
   const { error } = await supabase.from("conversations").delete().eq("id", id).eq("user_id", user.id);

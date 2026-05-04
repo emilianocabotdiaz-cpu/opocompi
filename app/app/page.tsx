@@ -46,7 +46,7 @@ function renderMessageText(text: string) {
 }
 
 const paidWelcomeMessage =
-  "Bienvenido companero, estoy para ayudarte a ser Policia. Lo vas a conseguir y lo vamos a celebrar. Dime en que te puedo ayudar, compi.";
+  "Bienvenido compañero, estoy para ayudarte a ser Policía. Lo vas a conseguir y lo vamos a celebrar. Dime en qué te puedo ayudar, compi.";
 
 const trialWelcomeMessage =
   "Bienvenido a OpoCompi. Puedes probar 3 mensajes gratis; preguntame una duda, pideme un test o cuentame como llevas el estudio.";
@@ -87,7 +87,7 @@ export default function OpoCompiAppPage() {
     const storedMessages = localStorage.getItem("opocompi-chat-messages");
 
     if (checkoutSuccess) {
-      setNotice("Pago completado. Estamos comprobando tu membresia.");
+      setNotice("Pago completado. Estamos comprobando tu suscripción.");
       window.history.replaceState({}, "", window.location.pathname);
     }
 
@@ -139,7 +139,7 @@ export default function OpoCompiAppPage() {
           setPaidAccess(false);
         }
       } catch {
-        setNotice("No pude comprobar la membresia ahora. Recarga en unos segundos.");
+        setNotice("No pude comprobar la suscripción ahora. Recarga en unos segundos.");
       }
     }
 
@@ -349,6 +349,28 @@ export default function OpoCompiAppPage() {
     }
   }
 
+  async function loginWithGoogle() {
+    setNotice("");
+
+    if (!supabase || !isSupabaseConfigured) {
+      setNotice("Supabase no está configurado todavía para login.");
+      return;
+    }
+
+    setAuthLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/app`,
+      },
+    });
+
+    if (error) {
+      setNotice(`Supabase: ${error.message}`);
+      setAuthLoading(false);
+    }
+  }
+
   async function logout() {
     if (supabase) {
       await supabase.auth.signOut();
@@ -361,12 +383,12 @@ export default function OpoCompiAppPage() {
     setConversations([]);
     setActiveConversationId("");
     setMessages([{ id: "welcome", role: "assistant", text: trialWelcomeMessage }]);
-    setNotice("Sesion cerrada.");
+    setNotice("Sesión cerrada.");
   }
 
   async function openBillingPortal() {
     if (!supabase) {
-      setNotice("Supabase no esta configurado para gestionar la membresia.");
+      setNotice("Supabase no está configurado para gestionar la suscripción.");
       return;
     }
 
@@ -377,7 +399,7 @@ export default function OpoCompiAppPage() {
       const accessToken = await getAccessToken();
 
       if (!accessToken) {
-        setNotice("Inicia sesion para gestionar tu membresia.");
+        setNotice("Inicia sesión para gestionar tu suscripción.");
         return;
       }
 
@@ -390,13 +412,13 @@ export default function OpoCompiAppPage() {
       const data = await response.json();
 
       if (!response.ok || !data.url) {
-        setNotice(data.error ?? "No pude abrir la gestion de membresia.");
+        setNotice(data.error ?? "No pude abrir la gestión de la suscripción.");
         return;
       }
 
       window.location.href = data.url;
     } catch {
-      setNotice("No pude abrir la gestion de membresia.");
+      setNotice("No pude abrir la gestión de la suscripción.");
     } finally {
       setPortalLoading(false);
     }
@@ -408,7 +430,7 @@ export default function OpoCompiAppPage() {
     if (!text) return;
 
     if (!paidAccess && demoUses >= 3) {
-      setNotice("Has usado los 3 mensajes gratuitos. Activa la membresia para seguir con OpoCompi.");
+      setNotice("Has usado los 3 mensajes gratuitos. Activa la suscripción para seguir con OpoCompi.");
       return;
     }
 
@@ -489,21 +511,26 @@ export default function OpoCompiAppPage() {
 
         <section className="chat-app-account">
           <p className="panel-label">Cuenta</p>
-          <strong>{paidAccess ? "Membresia activa" : `Prueba ${Math.min(demoUses, 3)}/3`}</strong>
+          <strong>{paidAccess ? "Suscripción activa" : `Prueba ${Math.min(demoUses, 3)}/3`}</strong>
           {userEmail ? <span>{userEmail}</span> : null}
 
           {!userEmail ? (
-            <form onSubmit={loginWithEmail}>
-              <input
-                type="email"
-                value={loginEmail}
-                onChange={(event) => setLoginEmail(event.target.value)}
-                placeholder="tu@email.com"
-              />
-              <button className="btn btn-secondary" type="submit" disabled={authLoading || loginCooldown > 0}>
-                {authLoading ? "Enviando..." : loginCooldown > 0 ? `Reintentar en ${loginCooldown}s` : "Entrar"}
+            <div className="app-login-options">
+              <button className="btn btn-secondary google-btn" type="button" onClick={loginWithGoogle} disabled={authLoading}>
+                Entrar con Google
               </button>
-            </form>
+              <form onSubmit={loginWithEmail}>
+                <input
+                  type="email"
+                  value={loginEmail}
+                  onChange={(event) => setLoginEmail(event.target.value)}
+                  placeholder="tu@email.com"
+                />
+                <button className="btn btn-secondary" type="submit" disabled={authLoading || loginCooldown > 0}>
+                  {authLoading ? "Enviando..." : loginCooldown > 0 ? `Reintentar en ${loginCooldown}s` : "Entrar con email"}
+                </button>
+              </form>
+            </div>
           ) : (
             <button className="btn btn-secondary" type="button" onClick={logout}>
               Salir
@@ -512,11 +539,11 @@ export default function OpoCompiAppPage() {
 
           {paidAccess ? (
             <button className="btn btn-primary" type="button" onClick={openBillingPortal} disabled={portalLoading}>
-              {portalLoading ? "Abriendo..." : "Gestionar membresia"}
+              {portalLoading ? "Abriendo..." : "Gestionar suscripción"}
             </button>
           ) : (
             <a className="btn btn-primary" href="/#membresia">
-              Activar membresia
+              Activar suscripción
             </a>
           )}
         </section>
@@ -525,7 +552,7 @@ export default function OpoCompiAppPage() {
       <section className="chat-app-main" aria-label="Chat OpoCompi">
         <header className="chat-app-header">
           <div>
-            <p className="eyebrow">Tu primer companero en la Policia</p>
+            <p className="eyebrow">Tu primer compañero en la Policía</p>
             <h1>¿Dime en que te puedo ayudar, compi?</h1>
           </div>
           <button className="btn btn-secondary" type="button" onClick={newChat}>

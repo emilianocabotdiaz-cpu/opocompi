@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (!customerEmail) {
-    return NextResponse.json({ error: "Inicia sesion o introduce un email para contratar la membresia." }, { status: 400 });
+    return NextResponse.json({ error: "Inicia sesión o introduce un email para contratar la suscripción." }, { status: 400 });
   }
 
   const price =

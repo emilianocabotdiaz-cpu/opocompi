@@ -23,10 +23,10 @@ export default function TerminosPage() {
           Huelva. Correo de contacto: contacto@opocompi.com.
         </p>
 
-        <h2>Membresia</h2>
+        <h2>Suscripción</h2>
         <p>
-          La membresia da acceso al chat privado y a las funciones de practica disponibles en cada momento.
-          Los pagos y renovaciones se gestionan mediante Stripe. El usuario podra gestionar su suscripcion
+          La suscripción da acceso al chat privado y a las funciones de práctica disponibles en cada momento.
+          Los pagos y renovaciones se gestionan mediante Stripe. El usuario podrá gestionar su suscripción
           desde el portal de cliente habilitado en la aplicacion.
         </p>
 
@@ -44,7 +44,7 @@ export default function TerminosPage() {
 
         <h2>Cancelacion</h2>
         <p>
-          El usuario podra cancelar la suscripcion desde el portal de Stripe si esta disponible en su cuenta.
+          El usuario podrá cancelar la suscripción desde el portal de Stripe si está disponible en su cuenta.
           La cancelacion normalmente evita futuras renovaciones, manteniendo el acceso hasta el final del
           periodo ya abonado.
         </p>

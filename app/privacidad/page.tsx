@@ -26,14 +26,14 @@ export default function PrivacidadPage() {
         <h2>Datos que podemos tratar</h2>
         <ul>
           <li>Email y datos de acceso del usuario.</li>
-          <li>Estado de membresia y datos asociados al pago gestionado por Stripe.</li>
+          <li>Estado de suscripción y datos asociados al pago gestionado por Stripe.</li>
           <li>Mensajes enviados al chat para poder generar respuestas de estudio.</li>
           <li>Datos tecnicos basicos necesarios para seguridad, funcionamiento y mejora del servicio.</li>
         </ul>
 
         <h2>Finalidad</h2>
         <p>
-          Usamos los datos para crear y mantener cuentas, comprobar membresias, prestar el chat de IA,
+          Usamos los datos para crear y mantener cuentas, comprobar suscripciones, prestar el chat de IA,
           procesar pagos, mejorar la experiencia y atender incidencias.
         </p>
 
@@ -46,13 +46,13 @@ export default function PrivacidadPage() {
 
         <h2>Derechos del usuario</h2>
         <p>
-          Puedes solicitar acceso, rectificacion, supresion, oposicion, limitacion o portabilidad de tus
+          Puedes solicitar acceso, rectificación, supresión, oposición, limitación o portabilidad de tus
           datos escribiendo a contacto@opocompi.com.
         </p>
 
         <h2>Conservacion</h2>
         <p>
-          Conservaremos los datos mientras exista la cuenta, la membresia o una obligacion legal aplicable.
+          Conservaremos los datos mientras exista la cuenta, la suscripción o una obligación legal aplicable.
           Tambien podremos conservar informacion imprescindible para resolver incidencias o cumplir
           responsabilidades legales.
         </p>

@@ -6,7 +6,7 @@ import { isSupabaseConfigured, supabase } from "@/lib/supabase-browser";
 const modes = [
   { id: "dudas", label: "Dudas de temario" },
   { id: "test", label: "Generar test" },
-  { id: "animo", label: "Companero de animo" },
+  { id: "animo", label: "Compañero de ánimo" },
   { id: "plan", label: "Plan semanal" },
 ];
 
@@ -105,7 +105,7 @@ export default function Home() {
 
     if (checkoutSuccess) {
       if (isSupabaseConfigured) {
-        setPageNotice("Pago completado. Estamos comprobando tu membresia; si tarda unos segundos, recarga la pagina.");
+        setPageNotice("Pago completado. Estamos comprobando tu suscripción; si tarda unos segundos, recarga la página.");
       } else {
         localStorage.setItem("opocompi-paid-access", "true");
         setPaidAccess(true);
@@ -185,7 +185,7 @@ export default function Home() {
           ]);
         }
       } catch {
-        setPageNotice("No pude comprobar la membresia ahora. Si acabas de entrar, recarga en unos segundos.");
+        setPageNotice("No pude comprobar la suscripción ahora. Si acabas de entrar, recarga en unos segundos.");
       }
     }
 
@@ -265,13 +265,13 @@ export default function Home() {
     setPageNotice("");
 
     if (isSupabaseConfigured && !userEmail) {
-      setPageNotice("Primero inicia sesion. Asi la membresia queda guardada en tu cuenta.");
+      setPageNotice("Primero inicia sesión. Así la suscripción queda guardada en tu cuenta.");
       setShowLoginPanel(true);
       return;
     }
 
     if (!userEmail && !checkoutEmail.trim()) {
-      setPageNotice("Escribe tu email para contratar la membresia.");
+      setPageNotice("Escribe tu email para contratar la suscripción.");
       setShowLoginPanel(true);
       return;
     }
@@ -378,7 +378,7 @@ export default function Home() {
         text: trialWelcomeMessage,
       },
     ]);
-    setPageNotice("Sesion cerrada. Puedes volver a entrar cuando quieras, compi.");
+    setPageNotice("Sesión cerrada. Puedes volver a entrar cuando quieras, compi.");
   }
 
   async function installApp() {
@@ -417,7 +417,7 @@ export default function Home() {
     if (!text) return;
 
     if (!paidAccess && demoUses >= 3) {
-      setPageNotice("Has usado los 3 mensajes gratuitos. Contrata la membresia para desbloquear el chat completo.");
+      setPageNotice("Has usado los 3 mensajes gratuitos. Contrata la suscripción para desbloquear el chat completo.");
       document.querySelector("#membresia")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
@@ -476,15 +476,15 @@ export default function Home() {
           {userEmail || paidAccess ? (
             <button className="btn btn-secondary" type="button" onClick={logout}>Salir</button>
           ) : (
-            <button className="btn btn-secondary login-trigger" type="button" onClick={() => setShowLoginPanel((current) => !current)}>
-              Iniciar sesion
+            <button className="btn btn-ghost login-trigger" type="button" onClick={() => setShowLoginPanel((current) => !current)}>
+              Iniciar sesión
             </button>
           )}
-          {!paidAccess ? <a className="btn btn-primary" href="#asistente">Probar gratis</a> : null}
+          {!paidAccess ? <a className="btn btn-primary topbar-cta" href="#asistente">Probar gratis</a> : null}
         </div>
 
         {showLoginPanel && !userEmail ? (
-          <div className="login-popover" role="dialog" aria-label="Iniciar sesion">
+          <div className="login-popover" role="dialog" aria-label="Iniciar sesión">
             <form className="auth-form" onSubmit={loginWithEmail}>
               <label>
                 Email
@@ -543,16 +543,16 @@ export default function Home() {
         {!paidAccess ? (
           <section id="membresia" className="pricing">
             <div className="section-heading compact">
-              <p className="eyebrow">Membresia</p>
+              <p className="eyebrow">Suscripción</p>
               <h2>Acceso completo al chat</h2>
-              <p>Inicia sesion, elige plan y paga con Stripe. Al volver del pago, el chat y los tests quedan vinculados a tu cuenta.</p>
+              <p>Inicia sesión, elige plan y paga con Stripe. Al volver del pago, el chat y los tests quedan vinculados a tu cuenta.</p>
             </div>
             <div className="purchase-form">
               {userEmail ? (
                 <p className="purchase-session">Vas a contratar con la cuenta <strong>{userEmail}</strong>.</p>
               ) : (
                 <label>
-                  Email para la membresia
+                  Email para la suscripción
                   <input
                     type="email"
                     value={checkoutEmail}
@@ -569,7 +569,7 @@ export default function Home() {
                 <ul>
                   <li>Chat IA privado</li>
                   <li>Tests por bloque</li>
-                  <li>Acompanamiento motivacional</li>
+                  <li>Acompañamiento motivacional</li>
                 </ul>
                 <button className="btn btn-secondary" type="button" onClick={() => startCheckout("monthly")}>
                   {checkoutLoading === "monthly" ? "Abriendo pago..." : "Contratar mensual"}
@@ -577,7 +577,7 @@ export default function Home() {
               </article>
               <article className="price-card featured">
                 <div className="tag">Ahorro anual</div>
-                <h3>Oposicion completa</h3>
+                <h3>Oposición completa</h3>
                 <p className="price">90,90 EUR<span>/ano</span></p>
                 <ul>
                   <li>Todo lo del plan mensual</li>
@@ -604,7 +604,7 @@ export default function Home() {
             <div className="benefit-grid">
               <article>
                 <strong>Respuesta inmediata</strong>
-                <p>Pregunta una duda y recibe una explicacion corta, ordenada y adaptada a oposicion.</p>
+                <p>Pregunta una duda y recibe una explicación corta, ordenada y adaptada a oposición.</p>
               </article>
               <article>
                 <strong>Tests para fijar</strong>
@@ -628,7 +628,7 @@ export default function Home() {
             <div className="steps-list">
               <article>
                 <span>1</span>
-                <p>Haz una pregunta real de tu oposicion.</p>
+                <p>Haz una pregunta real de tu oposición.</p>
               </article>
               <article>
                 <span>2</span>
@@ -636,7 +636,7 @@ export default function Home() {
               </article>
               <article>
                 <span>3</span>
-                <p>Activa la membresia y sigue practicando cada dia.</p>
+                <p>Activa la suscripción y sigue practicando cada día.</p>
               </article>
             </div>
           </section>
@@ -674,11 +674,11 @@ export default function Home() {
         <section id="asistente" className="workspace">
           <div className="section-heading">
             <p className="eyebrow">{paidAccess ? "Zona de miembros" : "Prueba gratuita"}</p>
-            <h2>{paidAccess ? "Tu chat privado de oposicion" : "Habla con tu nuevo companero"}</h2>
+            <h2>{paidAccess ? "Tu chat privado de oposición" : "Habla con tu nuevo compañero"}</h2>
             <p>
               {paidAccess
                 ? "Dime que tema llevas entre manos y avanzamos juntos, compi."
-                : "Usa 3 mensajes gratis. Al contratar la membresia, el chat queda desbloqueado para seguir estudiando."}
+                : "Usa 3 mensajes gratis. Al contratar la suscripción, el chat queda desbloqueado para seguir estudiando."}
             </p>
           </div>
 
@@ -687,13 +687,13 @@ export default function Home() {
               <div>
                 <p className="panel-label">Estado</p>
                 <div className={`member-badge ${paidAccess ? "active" : "locked"}`}>
-                  {paidAccess ? "Membresia activa" : `Prueba ${Math.min(demoUses, 3)}/3`}
+                  {paidAccess ? "Suscripción activa" : `Prueba ${Math.min(demoUses, 3)}/3`}
                 </div>
               </div>
 
               <div className="focus-card">
-                <p className="panel-label">Acompanamiento</p>
-                <p className="side-note">Pregunta lo que necesites y OpoCompi adaptara la respuesta a tu oposicion.</p>
+                <p className="panel-label">Acompañamiento</p>
+                <p className="side-note">Pregunta lo que necesites y OpoCompi adaptará la respuesta a tu oposición.</p>
               </div>
             </aside>
 
@@ -718,7 +718,7 @@ export default function Home() {
                   value={prompt}
                   onChange={(event) => setPrompt(event.target.value)}
                   type="text"
-                  placeholder="Ej.: Hazme 5 preguntas sobre Constitucion Espanola"
+                  placeholder="Ej.: Hazme 5 preguntas sobre Constitución Española"
                   disabled={busy}
                 />
                 <button className="btn btn-primary" type="submit" disabled={busy}>
@@ -733,7 +733,7 @@ export default function Home() {
           <section className="cta-band">
             <div>
               <p className="eyebrow">Empieza hoy</p>
-              <h2>Tu oposicion no se prepara sola y nosotros te vamos a acompanar.</h2>
+              <h2>Tu oposición no se prepara sola y nosotros te vamos a acompañar.</h2>
               <p className="install-copy">
                 Instala OpoCompi en tu movil y llevalo siempre en la pantalla de inicio.
               </p>
@@ -743,7 +743,7 @@ export default function Home() {
               <button className="btn btn-primary" type="button" onClick={installApp}>
                 {isStandalone ? "APP instalada" : "Instalar APP"}
               </button>
-              <a className="btn btn-secondary" href="#membresia">Ver membresia</a>
+              <a className="btn btn-secondary" href="#membresia">Ver suscripción</a>
             </div>
           </section>
         ) : null}
@@ -766,8 +766,8 @@ export default function Home() {
                 <p>Si. Puedes usar 3 mensajes gratis para comprobar si te ayuda con una duda real, un repaso o un pequeño test.</p>
               </article>
               <article>
-                <h3>¿Puedo cancelar la membresia?</h3>
-                <p>Si. Desde tu cuenta podras gestionar la suscripcion, cambiar tarjeta o cancelar desde el portal seguro de Stripe.</p>
+                <h3>¿Puedo cancelar la suscripción?</h3>
+                <p>Sí. Desde tu cuenta podrás gestionar la suscripción, cambiar tarjeta o cancelar desde el portal seguro de Stripe.</p>
               </article>
               <article>
                 <h3>¿Las respuestas son siempre correctas?</h3>

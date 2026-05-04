@@ -28,7 +28,7 @@ export default async function ActualidadPage() {
 
       <section className="news-hero">
         <p className="eyebrow">Actualidad para opositores</p>
-        <h1>Noticias sobre oposiciones a Policia Nacional</h1>
+        <h1>Noticias sobre oposiciones a Policía Nacional</h1>
         <p>
           Una seleccion automatica de noticias publicadas en medios de comunicacion. Sirven para entender contexto, cambios y novedades de forma mas didactica.
         </p>
