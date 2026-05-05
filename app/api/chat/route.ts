@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
       model,
       instructions: OPOCOMPI_SYSTEM_PROMPT,
       input: buildOpoCompiInput(message, mode),
+      max_output_tokens: 900,
     }),
   });
 

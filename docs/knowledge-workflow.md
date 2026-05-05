@@ -34,6 +34,23 @@ Incluye:
 - dudas frecuentes,
 - cinco preguntas tipo test iniciales.
 
+## Segundo bloque creado
+
+```text
+docs/knowledge/seguridad-privada.md
+```
+
+Creado a partir de:
+
+- Temario aportado por el usuario como orientacion de estructura.
+- Ley 5/2014, de 4 de abril, de Seguridad Privada, consultada como referencia normativa principal.
+
+Regla importante:
+
+- No copiar literalmente temarios privados.
+- Convertir cada tema en apuntes propios, esquemas y preguntas.
+- Contrastar articulos y datos normativos con BOE o fuente oficial.
+
 ## Siguiente bloque sugerido
 
 Derecho Penal:

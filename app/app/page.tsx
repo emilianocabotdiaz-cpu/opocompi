@@ -46,10 +46,10 @@ function renderMessageText(text: string) {
 }
 
 const paidWelcomeMessage =
-  "Bienvenido compañero, estoy para ayudarte a ser Policía. Lo vas a conseguir y lo vamos a celebrar. Dime en qué te puedo ayudar, compi.";
+  "Bienvenido, Compi. Estoy para ayudarte a ser Policía. Lo vas a conseguir y lo vamos a celebrar. Dime en qué te puedo ayudar.";
 
 const trialWelcomeMessage =
-  "Bienvenido a OpoCompi. Puedes probar 3 mensajes gratis; pregúntame una duda, pídeme un test o cuéntame cómo llevas el estudio.";
+  "Bienvenido a OpoCompi, Compi. Puedes probar 3 mensajes gratis; pregúntame una duda, pídeme un test o cuéntame cómo llevas el estudio.";
 
 function getConversationTitle(text: string) {
   const clean = text.replace(/\s+/g, " ").trim();
@@ -495,6 +495,12 @@ export default function OpoCompiAppPage() {
           </button>
         </div>
 
+        {userEmail ? (
+          <button className="drawer-logout-button" type="button" onClick={logout}>
+            Salir
+          </button>
+        ) : null}
+
         <button className="btn btn-primary chat-new-button" type="button" onClick={newChat}>
           Nuevo chat
         </button>
@@ -531,17 +537,6 @@ export default function OpoCompiAppPage() {
               <button className="btn btn-secondary google-btn" type="button" onClick={loginWithGoogle} disabled={authLoading}>
                 Entrar con Google
               </button>
-              <form onSubmit={loginWithEmail}>
-                <input
-                  type="email"
-                  value={loginEmail}
-                  onChange={(event) => setLoginEmail(event.target.value)}
-                  placeholder="tu@email.com"
-                />
-                <button className="btn btn-secondary" type="submit" disabled={authLoading || loginCooldown > 0}>
-                  {authLoading ? "Enviando..." : loginCooldown > 0 ? `Reintentar en ${loginCooldown}s` : "Entrar con email"}
-                </button>
-              </form>
             </div>
           ) : (
             <button className="btn btn-secondary" type="button" onClick={logout}>

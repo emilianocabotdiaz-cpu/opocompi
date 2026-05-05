@@ -57,6 +57,11 @@ const paidWelcomeMessage =
 const trialWelcomeMessage =
   "Puedes probarme gratis con 3 mensajes. Pregúntame una duda, pídeme un test o dime cómo llevas la semana.";
 
+const HOME_CHAT_MESSAGES_KEY = "opocompi-home-chat-messages";
+const HOME_CHAT_PROMPT_KEY = "opocompi-home-chat-prompt";
+const HOME_CHAT_MODE_KEY = "opocompi-home-chat-mode";
+const LEGACY_CHAT_MESSAGES_KEY = "opocompi-chat-messages";
+
 const modeSupportMessages: Record<string, string> = {
   dudas: "Perfecto, compañero. Volvemos a dudas de temario: vamos a dejarlo claro, corto y útil para examen.",
   test: "Vamos con test. Practicar es avanzar: cada fallo corregido te acerca un poco más a tu plaza.",
@@ -102,6 +107,16 @@ export default function Home() {
     const checkoutCancelled = params.get("checkout") === "cancelled";
     const storedPaidAccess = !isSupabaseConfigured && localStorage.getItem("opocompi-paid-access") === "true";
     const storedUses = Number(localStorage.getItem("opocompi-demo-uses") ?? "0");
+    const storedPrompt = localStorage.getItem(HOME_CHAT_PROMPT_KEY);
+    const storedMode = localStorage.getItem(HOME_CHAT_MODE_KEY);
+
+    if (storedPrompt) {
+      setPrompt(storedPrompt);
+    }
+
+    if (storedMode && modes.some((item) => item.id === storedMode)) {
+      setMode(storedMode);
+    }
 
     if (checkoutSuccess) {
       if (isSupabaseConfigured) {
@@ -126,18 +141,21 @@ export default function Home() {
       window.history.replaceState({}, "", window.location.pathname);
     }
 
-    setPaidAccess(storedPaidAccess);
+    if (!checkoutSuccess) {
+      setPaidAccess(storedPaidAccess);
+    }
     setDemoUses(Number.isFinite(storedUses) ? storedUses : 0);
 
-    const storedMessages = localStorage.getItem("opocompi-chat-messages");
-    if (storedMessages && !checkoutSuccess && !storedPaidAccess) {
+    const storedMessages = localStorage.getItem(HOME_CHAT_MESSAGES_KEY) ?? localStorage.getItem(LEGACY_CHAT_MESSAGES_KEY);
+    if (storedMessages && !checkoutSuccess) {
       try {
         const parsedMessages = JSON.parse(storedMessages) as Message[];
         if (Array.isArray(parsedMessages) && parsedMessages.length > 0) {
           setMessages(parsedMessages);
         }
       } catch {
-        localStorage.removeItem("opocompi-chat-messages");
+        localStorage.removeItem(HOME_CHAT_MESSAGES_KEY);
+        localStorage.removeItem(LEGACY_CHAT_MESSAGES_KEY);
       }
     } else if (storedPaidAccess) {
       setMessages([
@@ -176,13 +194,22 @@ export default function Home() {
         if (profile.hasAccess) {
           localStorage.setItem("opocompi-paid-access", "true");
           setPaidAccess(true);
-          setMessages([
-            {
-              id: "paid-welcome",
-              role: "assistant",
-              text: paidWelcomeMessage,
-            },
-          ]);
+          setPageNotice("");
+          setMessages((current) => {
+            const hasRealConversation = current.some((message) => message.id !== "welcome" && message.id !== "paid-welcome");
+            return hasRealConversation
+              ? current
+              : [
+                  {
+                    id: "paid-welcome",
+                    role: "assistant",
+                    text: paidWelcomeMessage,
+                  },
+                ];
+          });
+          if (window.location.pathname === "/" && window.location.search.includes("checkout=success")) {
+            window.location.href = "/app";
+          }
         }
       } catch {
         setPageNotice("No pude comprobar la suscripción ahora. Si acabas de entrar, recarga en unos segundos.");
@@ -235,8 +262,16 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("opocompi-chat-messages", JSON.stringify(messages));
+    localStorage.setItem(HOME_CHAT_MESSAGES_KEY, JSON.stringify(messages));
   }, [messages]);
+
+  useEffect(() => {
+    localStorage.setItem(HOME_CHAT_PROMPT_KEY, prompt);
+  }, [prompt]);
+
+  useEffect(() => {
+    localStorage.setItem(HOME_CHAT_MODE_KEY, mode);
+  }, [mode]);
 
   useEffect(() => {
     if (loginCooldown <= 0) return;
@@ -372,7 +407,10 @@ export default function Home() {
     }
 
     localStorage.removeItem("opocompi-paid-access");
-    localStorage.removeItem("opocompi-chat-messages");
+    localStorage.removeItem(HOME_CHAT_MESSAGES_KEY);
+    localStorage.removeItem(HOME_CHAT_PROMPT_KEY);
+    localStorage.removeItem(HOME_CHAT_MODE_KEY);
+    localStorage.removeItem(LEGACY_CHAT_MESSAGES_KEY);
     setPaidAccess(false);
     setUserEmail("");
     setCheckoutEmail("");
@@ -468,7 +506,7 @@ export default function Home() {
           {!paidAccess ? <a href="#membresia">Precios</a> : null}
           <a href="/app">Abrir APP</a>
           <a href="/actualidad">Actualidad</a>
-          <a href="#asistente">Probar chat</a>
+          {!paidAccess ? <a href="#asistente">Probar chat</a> : null}
           <a href="/tests">Tests</a>
         </nav>
         <div className="topbar-actions">
@@ -485,28 +523,13 @@ export default function Home() {
               Iniciar sesión
             </button>
           )}
-          {!paidAccess ? <a className="btn btn-primary topbar-cta" href="#asistente">Probar gratis</a> : null}
+          {!paidAccess ? <a className="btn btn-primary topbar-cta" href="#asistente">Probar gratis</a> : <a className="btn btn-primary topbar-cta" href="/app">Ir al chat</a>}
         </div>
 
         {showLoginPanel && !userEmail ? (
           <div className="login-popover" role="dialog" aria-label="Iniciar sesión">
-            <form className="auth-form" onSubmit={loginWithEmail}>
-              <label>
-                Email
-                <input
-                  type="email"
-                  value={loginEmail}
-                  onChange={(event) => setLoginEmail(event.target.value)}
-                  placeholder="tu@email.com"
-                />
-              </label>
-              <button className="btn btn-primary" type="submit" disabled={authLoading || loginCooldown > 0}>
-                {authLoading ? "Enviando..." : loginCooldown > 0 ? `Reintentar en ${loginCooldown}s` : "Enviar enlace"}
-              </button>
-            </form>
-            <div className="auth-divider"><span>o</span></div>
             <button className="btn btn-secondary google-btn" type="button" onClick={loginWithGoogle} disabled={authLoading}>
-              Entrar con Google
+              {authLoading ? "Abriendo..." : "Entrar con Google"}
             </button>
           </div>
         ) : null}
@@ -532,7 +555,7 @@ export default function Home() {
             </p>
             <div className="hero-actions">
               {paidAccess ? (
-                <a className="btn btn-primary" href="#asistente">
+                <a className="btn btn-primary" href="/app">
                   Ir al chat
                 </a>
               ) : (
