@@ -49,7 +49,7 @@ const paidWelcomeMessage =
   "Bienvenido compañero, estoy para ayudarte a ser Policía. Lo vas a conseguir y lo vamos a celebrar. Dime en qué te puedo ayudar, compi.";
 
 const trialWelcomeMessage =
-  "Bienvenido a OpoCompi. Puedes probar 3 mensajes gratis; preguntame una duda, pideme un test o cuentame como llevas el estudio.";
+  "Bienvenido a OpoCompi. Puedes probar 3 mensajes gratis; pregúntame una duda, pídeme un test o cuéntame cómo llevas el estudio.";
 
 function getConversationTitle(text: string) {
   const clean = text.replace(/\s+/g, " ").trim();
@@ -69,6 +69,7 @@ export default function OpoCompiAppPage() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [loginCooldown, setLoginCooldown] = useState(0);
   const [activeConversationId, setActiveConversationId] = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -134,6 +135,7 @@ export default function OpoCompiAppPage() {
         if (profile.hasAccess) {
           localStorage.setItem("opocompi-paid-access", "true");
           setPaidAccess(true);
+          setNotice("");
           await loadConversations(session.access_token);
         } else {
           setPaidAccess(false);
@@ -232,6 +234,7 @@ export default function OpoCompiAppPage() {
       }
 
       setActiveConversationId(data.conversation.id);
+      setDrawerOpen(false);
       setMessages(
         Array.isArray(data.conversation.messages) && data.conversation.messages.length > 0
           ? data.conversation.messages
@@ -284,7 +287,8 @@ export default function OpoCompiAppPage() {
     setActiveConversationId("");
     setMessages([{ id: "paid-welcome", role: "assistant", text: paidAccess ? paidWelcomeMessage : trialWelcomeMessage }]);
     setPrompt("");
-    setNotice(paidAccess ? "Nuevo chat listo. Dime en que avanzamos, compi." : "");
+    setDrawerOpen(false);
+    setNotice("");
   }
 
   async function deleteConversation(id: string) {
@@ -329,12 +333,16 @@ export default function OpoCompiAppPage() {
     }
 
     setAuthLoading(true);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 12000);
+
     try {
       const response = await fetch("/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        signal: controller.signal,
         body: JSON.stringify({ email: loginEmail, redirectTo: `${window.location.origin}/app` }),
       });
       const data = await response.json();
@@ -343,8 +351,9 @@ export default function OpoCompiAppPage() {
         setLoginCooldown(60);
       }
     } catch {
-      setNotice("No pude enviar el enlace de acceso.");
+      setNotice("El acceso por email esta tardando demasiado. Prueba de nuevo en unos segundos o entra con Google.");
     } finally {
+      window.clearTimeout(timeout);
       setAuthLoading(false);
     }
   }
@@ -471,27 +480,30 @@ export default function OpoCompiAppPage() {
 
   return (
     <main className="chat-app-page">
-      <aside className="chat-app-sidebar">
-        <a className="brand" href="/app" aria-label="OpoCompi app">
-          <span className="brand-mark logo-mark">
-            <img src="/brand/opocompi-logo.png" alt="" />
-          </span>
-          <span>OpoCompi</span>
-        </a>
+      {drawerOpen ? <button className="chat-drawer-backdrop" type="button" aria-label="Cerrar menú" onClick={() => setDrawerOpen(false)} /> : null}
+
+      <aside className={drawerOpen ? "chat-app-sidebar open" : "chat-app-sidebar"}>
+        <div className="chat-drawer-head">
+          <a className="brand" href="/app" aria-label="OpoCompi app">
+            <span className="brand-mark logo-mark">
+              <img src="/brand/opocompi-logo.png" alt="" />
+            </span>
+            <span>OpoCompi</span>
+          </a>
+          <button className="close-drawer-button" type="button" aria-label="Cerrar menú" onClick={() => setDrawerOpen(false)}>
+            Cerrar
+          </button>
+        </div>
 
         <button className="btn btn-primary chat-new-button" type="button" onClick={newChat}>
           Nuevo chat
         </button>
 
-        <nav className="chat-app-nav" aria-label="Navegacion de la app">
-          <a className="active" href="/app">Chat</a>
-        </nav>
-
         <section className="chat-history" aria-label="Historial de chats">
           <p className="panel-label">Historial</p>
           {historyLoading ? <p className="history-empty">Cargando...</p> : null}
           {!historyLoading && conversations.length === 0 ? (
-            <p className="history-empty">Tus conversaciones apareceran aqui.</p>
+            <p className="history-empty">Tus conversaciones aparecerán aquí.</p>
           ) : null}
           {conversations.map((conversation) => (
             <div className="history-item" key={conversation.id}>
@@ -502,7 +514,7 @@ export default function OpoCompiAppPage() {
               >
                 {conversation.title}
               </button>
-              <button type="button" aria-label="Borrar conversacion" onClick={() => deleteConversation(conversation.id)}>
+              <button type="button" aria-label="Borrar conversación" onClick={() => deleteConversation(conversation.id)}>
                 Borrar
               </button>
             </div>
@@ -550,19 +562,29 @@ export default function OpoCompiAppPage() {
       </aside>
 
       <section className="chat-app-main" aria-label="Chat OpoCompi">
-        <header className="chat-app-header">
-          <div>
-            <p className="eyebrow">Tu primer compañero en la Policía</p>
-            <h1>¿Dime en que te puedo ayudar, compi?</h1>
-          </div>
-          <button className="btn btn-secondary" type="button" onClick={newChat}>
-            Nuevo chat
+        <header className="chat-app-topbar">
+          <a className="brand" href="/app" aria-label="OpoCompi app">
+            <span className="brand-mark logo-mark">
+              <img src="/brand/opocompi-logo.png" alt="" />
+            </span>
+            <span>OpoCompi</span>
+          </a>
+          <button className="menu-button" type="button" aria-label="Abrir menú" onClick={() => setDrawerOpen(true)}>
+            <span />
+            <span />
+            <span />
           </button>
         </header>
 
         {notice ? <div className="chat-app-notice">{notice}</div> : null}
 
         <div className="chat-app-messages" aria-live="polite">
+          {messages.length <= 1 ? (
+            <div className="chat-empty-state">
+              <p>Tu primer compañero en la Policía</p>
+              <h1>¿Dime en qué te puedo ayudar, compi?</h1>
+            </div>
+          ) : null}
           {messages.map((message) => (
             <article className={`message ${message.role}`} key={message.id}>
               <span>{message.role === "user" ? "Tu" : "OpoCompi"}</span>

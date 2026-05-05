@@ -2,7 +2,7 @@ export type OfficialNewsItem = {
   id: string;
   title: string;
   summary: string;
-  source: "BOE" | "Policia Nacional" | "Ministerio del Interior" | "Medios";
+  source: "BOE" | "Policía Nacional" | "Ministerio del Interior" | "Medios";
   publisher?: string;
   category: "Convocatoria" | "Lista" | "Pruebas" | "Normativa" | "Aviso";
   url: string;
@@ -239,7 +239,7 @@ async function fetchRss(url: string): Promise<OfficialNewsItem[]> {
         return {
           id: itemId("boe", link, title),
           title,
-          summary: summary || "Publicacion oficial del BOE relacionada con oposiciones y procesos selectivos.",
+          summary: summary || "Publicación oficial del BOE relacionada con oposiciones y procesos selectivos.",
           source: "BOE" as const,
           category: inferCategory(text),
           url: link || url,
@@ -285,7 +285,7 @@ async function fetchMediaNews(): Promise<OfficialNewsItem[]> {
         return {
           id: itemId("media", link, title),
           title,
-          summary: summary || "Noticia publicada en un medio de comunicacion sobre oposiciones a Policia Nacional.",
+          summary: summary || "Noticia publicada en un medio de comunicación sobre oposiciones a Policía Nacional.",
           source: "Medios" as const,
           publisher,
           category: inferCategory(text),
@@ -353,15 +353,15 @@ export const officialNewsSources = [
     url: BOE_SECCION_OPOSICIONES_RSS,
   },
   {
-    name: "Policia Nacional - Procesos selectivos",
+    name: "Policía Nacional - Procesos selectivos",
     url: POLICIA_PROCESOS_URL,
   },
   {
-    name: "Ministerio del Interior - Policia Nacional",
+    name: "Ministerio del Interior - Policía Nacional",
     url: INTERIOR_PROCESOS_URL,
   },
   {
-    name: "Google News - Medios sobre oposiciones Policia Nacional",
+    name: "Google News - Medios sobre oposiciones Policía Nacional",
     url: MEDIA_NEWS_RSS,
   },
 ];

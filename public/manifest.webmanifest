@@ -1,7 +1,7 @@
 {
   "name": "OpoCompi",
   "short_name": "OpoCompi",
-  "description": "Asistente IA, tests y acompanamiento para opositores a Policia Nacional.",
+  "description": "Asistente IA, tests y acompañamiento para opositores a Policía Nacional.",
   "start_url": "/app",
   "scope": "/app",
   "display": "standalone",
@@ -27,7 +27,7 @@
     {
       "name": "Abrir chat",
       "short_name": "Chat",
-      "description": "Entrar al chat de acompanamiento",
+      "description": "Entrar al chat de acompañamiento",
       "url": "/app",
       "icons": [{ "src": "/brand/opocompi-logo.png", "sizes": "192x192" }]
     }

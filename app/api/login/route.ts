@@ -25,15 +25,21 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  const { error } = await supabase.auth.signInWithOtp({
-    email: email.trim(),
-    options: {
-      emailRedirectTo: siteUrl,
-    },
-  });
+  const { error } = await Promise.race([
+    supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: {
+        emailRedirectTo: siteUrl,
+      },
+    }),
+    new Promise<{ error: { message: string } }>((resolve) => {
+      setTimeout(() => resolve({ error: { message: "Supabase no respondio a tiempo." } }), 10000);
+    }),
+  ]);
 
   if (error) {
-    return NextResponse.json({ error: `Supabase: ${error.message}` }, { status: 400 });
+    const status = error.message.includes("tiempo") ? 504 : 400;
+    return NextResponse.json({ error: `Supabase: ${error.message}` }, { status });
   }
 
   return NextResponse.json({

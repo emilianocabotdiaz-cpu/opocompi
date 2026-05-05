@@ -318,12 +318,16 @@ export default function Home() {
     }
 
     setAuthLoading(true);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 12000);
+
     try {
       const response = await fetch("/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        signal: controller.signal,
         body: JSON.stringify({ email: loginEmail }),
       });
       const data = await response.json();
@@ -333,8 +337,9 @@ export default function Home() {
         setShowLoginPanel(false);
       }
     } catch {
-      setPageNotice("No pude enviar el enlace de acceso. Revisa Supabase y vuelve a intentarlo.");
+      setPageNotice("El acceso por email esta tardando demasiado. Prueba de nuevo en unos segundos o entra con Google.");
     } finally {
+      window.clearTimeout(timeout);
       setAuthLoading(false);
     }
   }
