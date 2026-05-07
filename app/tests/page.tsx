@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { sampleQuestions, topics } from "@/lib/test-bank";
+import { sampleQuestions, topics, type TestTopic } from "@/lib/test-bank";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase-browser";
 
 export default function TestsPage() {
   const [paidAccess, setPaidAccess] = useState(false);
   const [checkingAccess, setCheckingAccess] = useState(true);
-  const [topic, setTopic] = useState(topics[0]);
+  const [topic, setTopic] = useState<TestTopic>(topics[0]);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [resolved, setResolved] = useState(false);
 
@@ -54,13 +54,17 @@ export default function TestsPage() {
     checkAccess();
   }, []);
 
-  const questions = sampleQuestions[topic];
+  const questions = sampleQuestions[topic] ?? [];
   const score = useMemo(
     () => questions.filter((question, index) => answers[index] === question.correct).length,
     [answers, questions]
   );
 
-  function resetTest(nextTopic = topic) {
+  function isTestTopic(value: string): value is TestTopic {
+    return topics.includes(value as TestTopic);
+  }
+
+  function resetTest(nextTopic: TestTopic = topic) {
     setTopic(nextTopic);
     setAnswers({});
     setResolved(false);
@@ -79,11 +83,11 @@ export default function TestsPage() {
         </header>
         <section className="tests-locked">
           <p className="eyebrow">Zona de miembros</p>
-          <h1>{checkingAccess ? "Comprobando acceso" : "Tests desbloqueados con la suscripción"}</h1>
+          <h1>{checkingAccess ? "Comprobando acceso" : "Tests desbloqueados con la suscripcion"}</h1>
           <p>
             {checkingAccess
-              ? "Estamos revisando tu sesión. Un segundo, compi."
-              : "Esta zona es para practicar como en examen: respondes primero y corriges después. Entra o contrata la suscripción para acceder."}
+              ? "Estamos revisando tu sesion. Un segundo, compi."
+              : "Esta zona es para practicar como en examen: respondes primero y corriges despues. Entra o contrata la suscripcion para acceder."}
           </p>
           {!checkingAccess ? <a className="btn btn-primary" href="/#login">Entrar o contratar</a> : null}
         </section>
@@ -112,7 +116,14 @@ export default function TestsPage() {
       <section className="tests-toolbar">
         <label>
           Bloque
-          <select value={topic} onChange={(event) => resetTest(event.target.value)}>
+          <select
+            value={topic}
+            onChange={(event) => {
+              if (isTestTopic(event.target.value)) {
+                resetTest(event.target.value);
+              }
+            }}
+          >
             {topics.map((item) => (
               <option key={item}>{item}</option>
             ))}
@@ -124,59 +135,68 @@ export default function TestsPage() {
       </section>
 
       <section className="practice-list">
-        {questions.map((item, index) => {
-          const selected = answers[index];
-          const isCorrect = selected === item.correct;
+        {questions.length === 0 ? (
+          <article className="practice-question">
+            <div className="question-heading">
+              <strong>No hay preguntas disponibles para este bloque todavia.</strong>
+            </div>
+            <p>Elige otro bloque o vuelve mas tarde cuando el banco de preguntas este ampliado.</p>
+          </article>
+        ) : (
+          questions.map((item, index) => {
+            const selected = answers[index];
+            const isCorrect = selected === item.correct;
 
-          return (
-            <article className={`practice-question ${resolved ? (isCorrect ? "correct" : "wrong") : ""}`} key={item.question}>
-              <div className="question-heading">
-                <strong>{index + 1}. {item.question}</strong>
-                {resolved ? <span>{isCorrect ? "Correcta" : "Revisar"}</span> : null}
-              </div>
-
-              <div className="answer-options">
-                {item.options.map((option, optionIndex) => {
-                  const letter = String.fromCharCode(65 + optionIndex);
-                  const checked = selected === letter;
-                  const showCorrect = resolved && item.correct === letter;
-                  const showWrong = resolved && checked && item.correct !== letter;
-
-                  return (
-                    <label className={`answer-option ${showCorrect ? "right-answer" : ""} ${showWrong ? "wrong-answer" : ""}`} key={option}>
-                      <input
-                        checked={checked}
-                        disabled={resolved}
-                        name={`question-${index}`}
-                        onChange={() => setAnswers((current) => ({ ...current, [index]: letter }))}
-                        type="radio"
-                      />
-                      <span>{letter}) {option}</span>
-                    </label>
-                  );
-                })}
-              </div>
-
-              {resolved ? (
-                <div className="answer-feedback">
-                  <p><strong>Respuesta correcta:</strong> {item.correct}</p>
-                  <p>{item.explanation}</p>
+            return (
+              <article className={`practice-question ${resolved ? (isCorrect ? "correct" : "wrong") : ""}`} key={item.question}>
+                <div className="question-heading">
+                  <strong>{index + 1}. {item.question}</strong>
+                  {resolved ? <span>{isCorrect ? "Correcta" : "Revisar"}</span> : null}
                 </div>
-              ) : null}
-            </article>
-          );
-        })}
+
+                <div className="answer-options">
+                  {item.options.map((option, optionIndex) => {
+                    const letter = String.fromCharCode(65 + optionIndex);
+                    const checked = selected === letter;
+                    const showCorrect = resolved && item.correct === letter;
+                    const showWrong = resolved && checked && item.correct !== letter;
+
+                    return (
+                      <label className={`answer-option ${showCorrect ? "right-answer" : ""} ${showWrong ? "wrong-answer" : ""}`} key={option}>
+                        <input
+                          checked={checked}
+                          disabled={resolved}
+                          name={`question-${index}`}
+                          onChange={() => setAnswers((current) => ({ ...current, [index]: letter }))}
+                          type="radio"
+                        />
+                        <span>{letter}) {option}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+
+                {resolved ? (
+                  <div className="answer-feedback">
+                    <p><strong>Respuesta correcta:</strong> {item.correct}</p>
+                    <p>{item.explanation}</p>
+                  </div>
+                ) : null}
+              </article>
+            );
+          })
+        )}
       </section>
 
       <section className="resolve-bar">
         {resolved ? (
           <p>
-            Resultado: <strong>{score}/{questions.length}</strong>. Corrige los fallos, compañero, y seguimos avanzando.
+            Resultado: <strong>{score}/{questions.length}</strong>. Corrige los fallos, companero, y seguimos avanzando.
           </p>
         ) : (
           <p>Responde todas las que puedas antes de corregir. Asi entrenas memoria real.</p>
         )}
-        <button className="btn btn-primary" type="button" onClick={() => setResolved(true)}>
+        <button className="btn btn-primary" disabled={questions.length === 0} type="button" onClick={() => setResolved(true)}>
           Resolver
         </button>
       </section>
