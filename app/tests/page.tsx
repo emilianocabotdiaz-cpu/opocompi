@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { sampleQuestions, topics, type TestTopic } from "@/lib/test-bank";
+import { getRandomQuestions, topics, type TestQuestion, type TestTopic } from "@/lib/test-bank";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase-browser";
 
 export default function TestsPage() {
   const [paidAccess, setPaidAccess] = useState(false);
   const [checkingAccess, setCheckingAccess] = useState(true);
   const [topic, setTopic] = useState<TestTopic>(topics[0]);
+  const [questions, setQuestions] = useState<TestQuestion[]>(() => getRandomQuestions(topics[0]));
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [resolved, setResolved] = useState(false);
 
@@ -54,7 +55,6 @@ export default function TestsPage() {
     checkAccess();
   }, []);
 
-  const questions = sampleQuestions[topic] ?? [];
   const score = useMemo(
     () => questions.filter((question, index) => answers[index] === question.correct).length,
     [answers, questions]
@@ -66,6 +66,7 @@ export default function TestsPage() {
 
   function resetTest(nextTopic: TestTopic = topic) {
     setTopic(nextTopic);
+    setQuestions(getRandomQuestions(nextTopic));
     setAnswers({});
     setResolved(false);
   }
@@ -110,12 +111,12 @@ export default function TestsPage() {
       <section className="tests-hero">
         <p className="eyebrow">Practica de miembros</p>
         <h1>Generador de tests</h1>
-        <p>Elige bloque, responde sin mirar y pulsa resolver. Los errores se muestran al final para corregir con cabeza fria.</p>
+        <p>Elige tema, responde sin mirar y pulsa resolver. Cada reinicio genera una tanda aleatoria de preguntas.</p>
       </section>
 
       <section className="tests-toolbar">
         <label>
-          Bloque
+          Tema
           <select
             value={topic}
             onChange={(event) => {
@@ -138,9 +139,9 @@ export default function TestsPage() {
         {questions.length === 0 ? (
           <article className="practice-question">
             <div className="question-heading">
-              <strong>No hay preguntas disponibles para este bloque todavia.</strong>
+              <strong>No hay preguntas disponibles para este tema todavia.</strong>
             </div>
-            <p>Elige otro bloque o vuelve mas tarde cuando el banco de preguntas este ampliado.</p>
+            <p>Elige otro tema o vuelve mas tarde cuando el banco de preguntas este ampliado.</p>
           </article>
         ) : (
           questions.map((item, index) => {
